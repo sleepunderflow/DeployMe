@@ -1,5 +1,5 @@
 #include <iostream>
-#include "types.h"
+#include "definitions/types.h"
 #include "config.h"
 
 config configuration;

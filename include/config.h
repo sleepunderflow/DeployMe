@@ -2,10 +2,10 @@
 #define CONFIG_H
 
 #include <string>
-#include "types.h"
+#include "definitions/types.h"
 
 struct config {
-  const char *lang;
+  std::string lang;
   struct texts texts;
 };
 

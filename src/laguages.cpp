@@ -1,6 +1,6 @@
-#include "types.h"
+#include "languages.h"
 
-texts getLanguage(const char *language) {
+texts getLanguage(std::string language) {
   if (language == "en_GB") {
     return getLangEN_GB();
   } else if (language == "pl_PL") {
