@@ -11,11 +11,19 @@ void extractConfig(int argc, char **argv) {
       if (i+1 < argc) {
         ++i;
         configuration.lang = std::string(argv[i]);
-        configuration.texts = getLanguage(configuration.lang);
       } else {
         std::cout << "Incorrect number of arguments" << std::endl;
         exit(1);
       }
     }
   }
+
+}
+
+void setDefaultConfig() {
+  configuration.lang = "en_GB";
+}
+
+void processConfigurations() {
+  configuration.texts = getLanguage(configuration.lang);
 }

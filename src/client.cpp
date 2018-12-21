@@ -6,7 +6,9 @@ config configuration;
 
 int main(int argc, char **argv) {
   if (argc > 1) {
+    setDefaultConfig();
     extractConfig(argc, argv);
+    processConfigurations();
   } else {
     exit(0);
   }

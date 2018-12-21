@@ -10,5 +10,7 @@ struct config {
 };
 
 void extractConfig(int argc, char **argv);
+void setDefaultConfig();
+void processConfigurations();
 
 #endif //CONFIG_H
