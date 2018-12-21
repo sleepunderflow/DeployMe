@@ -1,0 +1,54 @@
+\usepackage[utf8]{inputenc}
+
+\usepackage[T1]{fontenc}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{lastpage}
+\usepackage{csquotes}
+\usepackage{hyperref}
+
+\geometry{
+  a4paper,
+  left=40mm,
+  right=30mm,
+  top=40mm,
+  bottom=40mm
+}
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{licensingSystem Documentation}
+
+\fancypagestyle{empty}{
+ \fancyhf{}
+ \fancyhead[C]{licensingSystem Documentation}
+}
+
+\fancypagestyle{plain}{}
+
+\rfoot{Page \thepage \hspace{1pt} of \pageref*{LastPage}}
+
+\graphicspath{ {images/} }
+
+\title{licensingSystem Documentation}
+\author{nopreserveroot}
+\date{v0.0.1}
+
+\newcommand{\sectionparagraph}[1]{section \ref{#1} on page \pageref{#1}}
+
+\renewcommand{\contentsname}{Table of contents}
+\renewcommand{\listfigurename}{List of figures}
+\renewcommand{\listtablename}{List of tables}
+
+\emergencystretch=1em

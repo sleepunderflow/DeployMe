@@ -17,7 +17,6 @@ void extractConfig(int argc, char **argv) {
       }
     }
   }
-
 }
 
 void setDefaultConfig() {
