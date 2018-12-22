@@ -8,5 +8,18 @@ struct texts
   std::string hello;
 };
 
+struct embeddedToolsMainHeader {
+  uint32_t totalSize;
+  uint16_t numberOfItems;
+  char contentHash[32];
+};
+
+struct individualHeader {
+  uint16_t ID;
+  uint32_t length;
+  char fileName[64];
+  char itemHash[32];
+  uint32_t permissions;
+};
 
 #endif //TYPES_H

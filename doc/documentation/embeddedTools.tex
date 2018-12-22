@@ -2,7 +2,60 @@
 This chapter explains the format for embedded executables for the client.
 
 \section{Format}
+Embedded executables and scripts are appended to the end of a client binary by the injector script.
 
+The format of that section is as follows:
+\begin{itemize}
+  \item Main Header
+  \item Item 1 Header
+  \item Item 1
+  \item Item 2 Header
+  \item Item 2
+  \item ...
+\end{itemize}
 \section{Main Header}
+The main header of embedded tools is defined as follows:
+\begin{lstlisting}[language=C++]
+  struct embeddedToolsMainHeader {
+    uint32_t totalSize;
+    uint16_t numberOfItems;
+    char contentHash[32];
+  };
+\end{lstlisting}
+
+Explanation:
+
+\textbf{totalSize} - the full size of embedded tools in bytes (including main header and individual headers)
+
+\textbf{numberOfItems} - the number of embedded Items
+
+\textbf{contentHash} - the SHA256 hash of the embedded part (Individual headers + items)
 
 \section{Individual headers}
+
+The individual header is separate for each embedded item and placed directly before the item content starts.
+
+It is defied as follows:
+\begin{lstlisting}[language=C++]
+  struct individualHeader {
+    uint16_t ID;
+    uint32_t length;
+    char fileName[64];
+    char itemHash[32];
+    uint32_t permissions;
+  };
+\end{lstlisting}
+
+Explanation:
+
+\textbf{ID} - numeric ID of the item. Starts from 0 and is being incremented by 1.
+
+\textbf{length} - length of the item (excluding individual header)
+
+\textbf{fileName} - the file name of the item including extension 
+
+\textbf{itemHash} - SHA256 hash of the item after unpacking and decrypting
+
+\textbf{permissions} - item permissions to be set by \emph{chmod}
+
+\section{Items}
