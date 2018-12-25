@@ -1,0 +1,29 @@
+\chapter{Configuration File}
+The injector script is configured by a configuration file \emph{config.conf} located in the same directory as the injector script itself.
+
+Format for the file is as follows:
+\begin{lstlisting}
+  [Item]
+  configuration for item object
+
+  [Command]
+  command configuration
+
+  [Item]
+  ...
+
+\end{lstlisting}
+
+There is no particular order for command/item entries. The only thing is that they will be added to the binary in the same order as entered to the config file but as they will be separated it doesn't matter whether you first add all the items then commands or command - item - command or however you like.
+
+Configuration options are being added in format key="value"
+
+if value should contain " character it has to be followed by \textbackslash\space(\textbackslash")
+
+\section{Item}
+Item settings is in a following format:
+\begin{lstlisting}
+  [Item]
+  path="path to a file to inject"
+
+\end{lstlisting}

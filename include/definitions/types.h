@@ -19,7 +19,7 @@ struct individualHeader {
   uint32_t length;
   char fileName[64];
   char itemHash[32];
-  uint32_t permissions;
+  char permissions[3];
 };
 
 #endif //TYPES_H
