@@ -9,6 +9,18 @@ hasher = hashlib.sha256()
 
 itemsToInject = []
 
+def writeEmbeddedTools(client):
+  mainHeader = createMainHeader()
+  client.write(mainHeader['totalSize'].to_bytes(4, 'little'))
+  client.write(mainHeader['numberOfItems'].to_bytes(2, 'little'))
+  client.write(mainHeader['fileHash'].encode('ascii'))
+  tempfile = open('.~injector.temp', 'rb')
+  buf = tempfile.read(BLOCKSIZE)
+  while len(buf) > 0:
+    client.write(buf)
+    buf = tempfile.read(BLOCKSIZE)
+  tempfile.close()
+
 def path_leaf(path):
   head, tail = ntpath.split(path)
   return tail or ntpath.basename(head)
@@ -36,7 +48,20 @@ class itemToInject:
       raise ValueError("Path not set")
 
 def createMainHeader():
-  pass
+  global hasher
+  tempfile = open('.~injector.temp', 'rb')
+  hasher = hashlib.sha256()
+  buf = tempfile.read(BLOCKSIZE)
+  totalSize = 38
+  numberOfItems = len(itemsToInject)
+  while len(buf) > 0:
+    totalSize += len(buf)
+    hasher.update(buf)
+    buf = tempfile.read(BLOCKSIZE)
+  tempfile.close()
+  fileHash = hasher.hexdigest()
+  return {'totalSize':totalSize, 'fileHash':fileHash, 'numberOfItems':numberOfItems}
+
 
 def createIndividualHeader(name, permissions):
   global itemID
@@ -56,7 +81,7 @@ def updateIndividualHeader(item, header):
   fileHash = hasher.hexdigest()
   return header[0], header[1] + len(item), header[2], fileHash, header[4]
 
-def addEmbeddedTools(client, item):
+def addEmbeddedTools(item):
   item.validate()
   path = item.path
   name = item.name
@@ -68,9 +93,9 @@ def addEmbeddedTools(client, item):
   with open(path, 'rb') as objectToInject:
     buf = objectToInject.read(BLOCKSIZE)
     while len(buf) > 0:
+      header = updateIndividualHeader(buf, header)
       buf = encryptItem(buf)
       tempfile2.write(buf)
-      header = updateIndividualHeader(buf, header)
       buf = objectToInject.read(BLOCKSIZE)
   tempfile2.close()
 
@@ -111,7 +136,8 @@ def main():
 
   client = open(path, 'ab')
   for item in itemsToInject:
-    addEmbeddedTools(client, item)
+    addEmbeddedTools(item)
+  writeEmbeddedTools(client)
 
 def parseConfigFile(line):
   global itemsToInject
