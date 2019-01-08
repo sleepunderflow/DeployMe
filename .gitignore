@@ -2,6 +2,9 @@ bin
 build
 injector/.~injector*
 
+.vscode
+.vscode/settings.json
+
 # Prerequisites
 *.d
 
