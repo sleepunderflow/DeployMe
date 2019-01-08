@@ -1,7 +1,6 @@
 bin
 build
-injector/bin
-injector/build
+injector/.~injector*
 
 # Prerequisites
 *.d

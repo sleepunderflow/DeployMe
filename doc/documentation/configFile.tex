@@ -21,9 +21,41 @@ Configuration options are being added in format key="value"
 if value should contain " character it has to be followed by \textbackslash\space(\textbackslash")
 
 \section{Item}
-Item settings is in a following format:
+Item settings are in a following format:
 \begin{lstlisting}
   [Item]
+  name="injected item name"
   path="path to a file to inject"
-
+  permissions="permissions"
+  remove-after-use="true/false"
 \end{lstlisting}
+
+Path is a relative path to a file to be injected.
+
+Permissions is a desired file permission in a chmod format (for example 755).
+
+Name is the injected item name that can be used internally instead of the ID in the [Command] structure. Has to be a string and can't start with a digit.
+
+If remove-after-use is set to true or missing, the extracted file will be deleted when the client terminates.
+
+\section{Command}
+Command settings are in the following format:
+\begin{lstlisting}
+  [Command]
+  command="command to be executed"
+  save-output="true/false"
+  print-output="true/false"
+  condition="condition"
+  loop="false/true"
+\end{lstlisting}
+
+Command is the desired shell command to execute. It can use the  \textbf{\{ID\}} structure to use the injected items ([Item] part)
+If such structure is in the command, the required item will be extracted to a temporary location and \{ID\} will be replaced with the path to the extracted file. The ID is either an integer pointing to which [Item] in order is to be used starting from 0 or a string being the name of the required file ([Item]->name). If the name is used it will be replaced with the index while generating.
+
+If print-output is false the output from the command will not be shown on the terminal. By default it's set to true.
+
+If print-output is true (default) the report from running the command will be generated (\autoref{chapt-Report})
+
+If condition is present, the command will only be run if the condition is true. The condition format is specified in \autoref{chapt-Condition}
+
+If loop is true (implicit default is false) then the command will be repeated until condition becomes false

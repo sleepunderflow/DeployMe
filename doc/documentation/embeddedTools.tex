@@ -40,6 +40,7 @@ It is defied as follows:
   struct individualHeader {
     uint16_t ID;
     uint32_t length;
+    uint16_t flags;
     char fileName[64];
     char itemHash[32];
     char permissions[3];
@@ -51,6 +52,12 @@ Explanation:
 \textbf{ID} - numeric ID of the item. Starts from 0 and is being incremented by 1.
 
 \textbf{length} - length of the item (excluding individual header)
+
+\textbf{flags} - bitmap that contains settings per item. Currently used bits (bit order in file:|7-0||15-8| - 16-bit integer in little-endian format):
+\begin{itemize}
+  \item 0: remove-after-use: 0-false, 1-true
+  \item 1-15: reserved for future use
+\end{itemize}
 
 \textbf{fileName} - the file name of the item including extension 
 
