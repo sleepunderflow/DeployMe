@@ -12,6 +12,12 @@ filesToInject = []
 nameToItems = {}
 currentlyBeingParsed = None
 
+originalClientLength = -1
+internalStructureSize = 24
+
+areItemsInjected = False
+areItemsEncrypted = False
+
 
 def resetHasher():
     global hasher
@@ -249,7 +255,7 @@ def addEmbeddedTools(item):
 def parseConfigFile(line):
     '''Parse a line of a configuration file.'''
 
-    global filesToInject, itemID, currentlyBeingParsed
+    global filesToInject, itemID, currentlyBeingParsed, areItemsInjected
 
     line.strip()
     if line[-1] == '\n':
@@ -260,6 +266,7 @@ def parseConfigFile(line):
         pass
 
     elif line == '[Item]':
+        areItemsInjected = True
         print("Configuring new item. ID: {0}".format(itemID))
         filesToInject.append(fileToInject(itemID))
         itemID += 1
@@ -275,6 +282,75 @@ def parseConfigFile(line):
         value = line[pos+2:-1]
 
         currentlyBeingParsed.parseConfig(key, value)
+
+
+def getClientLength(client):
+    '''
+    Read length of the original client binary. 
+    (used as a pointer to the beginning of embedded tools structure)
+    '''
+    global originalClientLength, internalStructureSize
+
+    buffer = client.read()
+
+    originalClientLength = len(buffer)
+
+    if len(buffer) < internalStructureSize:
+        raise ValueError("Empty or too short client binary")
+
+
+def generateInternalStructureFlags():
+    flags = 0
+    if areItemsInjected:
+        flags |= 1
+    if areItemsEncrypted:
+        flags |= 2
+
+    return flags
+
+
+def generateInternalStructure():
+    '''Generate an internal structure to inject into a client binary (see docs)'''
+
+    header = 0xdeadbeefdeadbeef.to_bytes(8, byteorder='little')
+
+    flags = generateInternalStructureFlags().to_bytes(8, byteorder='little')
+
+    if areItemsInjected:
+        injectedDataOffset = originalClientLength.to_bytes(
+            8, byteorder='little')
+    else:
+        injectedDataOffset = int(0).to_bytes(8, byteorder='little')
+
+    return header + flags + injectedDataOffset
+
+
+def fillInternalStructure(path):
+    '''Locate the internal client structure and replace it with generated data'''
+    global internalStructureSize
+
+    with open(path, 'rb') as file:
+        buffer = file.read()
+
+    # print(buffer)
+    location = -1
+    for pos in range(0, len(buffer) - internalStructureSize):
+        text = buffer[pos:pos+8]
+        number = int.from_bytes(text, byteorder='little')
+        if number == 0xdeadbeefdeadbeef:
+            location = pos
+            break
+    if location == -1:
+        raise ValueError('Byte sequence not found in the source file')
+
+    before = buffer[:location]
+    content = generateInternalStructure()
+    after = buffer[location+internalStructureSize:]
+
+    buffer = before + bytes(content) + after
+
+    with open(path, 'wb') as file:
+        file.write(buffer)
 
 
 def main():
@@ -293,8 +369,13 @@ def main():
         item.print()
         addEmbeddedTools(item)
 
+    with open(path, 'rb') as client:
+        getClientLength(client)
+
     with open(path, 'ab') as client:
         writeEmbeddedTools(client)
+
+    fillInternalStructure(path)
 
     os.remove('.~injector-finalInjectedFiles.temp')
     os.remove('.~injector-singleItem.temp')

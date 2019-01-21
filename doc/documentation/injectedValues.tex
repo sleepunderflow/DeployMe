@@ -1,0 +1,34 @@
+\chapter{Injected Values}
+\label{chapt-injectedValues}
+
+\section{Definition}
+
+There is a structure in the client binary defined as follows:
+
+\begin{lstlisting}
+  struct sInjectedConfig {
+    uint64_t header               = 0xDEADBEEFDEADBEEF;
+    uint64_t flags                = 0x0000000000000000;
+    uint64_t injectedDataOffset   = 0x1111111111111111;
+  };
+\end{lstlisting}
+
+It is statically initialised with those arbitrary values as it is meant to be overwriten by an injector. The header will be detected and then the corresponding values injected.
+
+\section{Fields}
+
+\textbf{header} - A magic value to be detected by an injector. It has to be at the beginning of the structure.
+
+\textbf{flags} - A bitmap for enabling / disabling specific features. Explanation in \autoref{sec-injectedValues-Flags}
+
+\textbf{injectedDataOffset} - The offset in file to the beginning of the Main Header for the Embedded Tools (\autoref{chapt-embeddedTools})
+
+\section{Flags}
+\label{sec-injectedValues-Flags}
+Currently defined bit flags:
+\begin{itemize}
+  \item \textbf{bit 0} - if set, Embedded Tools are appended to the file
+  \item \textbf{bit 1} - if set, the encryption of Embedded Tools is enabled. Otherwise just extract
+\end{itemize}
+
+The rest is currently reserved for a future use.
