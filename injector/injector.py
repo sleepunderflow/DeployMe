@@ -54,7 +54,7 @@ class fileToInject:
         self.setDefaultFlags()
         self.hash = ""
         # set length to a header size
-        self.length = 107
+        self.length = 144
 
     def setDefaultFlags(self):
         '''Sets default flags for the file. For details check the documentation.'''
@@ -134,9 +134,10 @@ class fileToInject:
         else:
             while len(self.name) != 64:
                 self.name += '\0'
-        return {'ID': self.ID.to_bytes(2, byteorder='little'),
+        self.permissions += '\0'
+        return {'ID': self.ID.to_bytes(4, byteorder='little'),
                 'length': self.length.to_bytes(4, byteorder='little'),
-                'flags': self.flags.to_bytes(2, byteorder='little'),
+                'flags': self.flags.to_bytes(4, byteorder='little'),
                 'fileName': self.name.encode('ascii'),
                 'itemHash': self.hash.encode('ascii'),
                 'permissions': self.permissions.encode('ascii')}
@@ -176,7 +177,7 @@ def writeMainHeader(client, header):
     '''Encode fields of a main header and write it to a client binary'''
 
     client.write(header['totalSize'].to_bytes(4, 'little'))
-    client.write(header['numberOfItems'].to_bytes(2, 'little'))
+    client.write(header['numberOfItems'].to_bytes(4, 'little'))
     client.write(header['fileHash'].encode('ascii'))
 
 
@@ -191,7 +192,7 @@ def createMainHeader():
     injectedFiles = open('.~injector-finalInjectedFiles.temp', 'rb')
 
     # size of a main header based on the specs. Required for a correct size calculations.
-    totalSize = 38
+    totalSize = 74
 
     buf = injectedFiles.read(BLOCKSIZE)
     while len(buf) > 0:

@@ -10,16 +10,17 @@ struct texts
 
 struct embeddedToolsMainHeader {
   uint32_t totalSize;
-  uint16_t numberOfItems;
-  char contentHash[32];
+  uint32_t numberOfItems;
+  char contentHash[64];
 };
 
 struct individualHeader {
-  uint16_t ID;
+  uint32_t ID;
   uint32_t length;
+  uint32_t flags;
   char fileName[64];
-  char itemHash[32];
-  char permissions[3];
+  char itemHash[64];
+  char permissions[4];
 };
 
 #endif //TYPES_H

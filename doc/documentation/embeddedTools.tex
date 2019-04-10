@@ -19,8 +19,8 @@ The main header of embedded tools is defined as follows:
 \begin{lstlisting}[language=C++]
   struct embeddedToolsMainHeader {
     uint32_t totalSize;
-    uint16_t numberOfItems;
-    char contentHash[32];
+    uint32_t numberOfItems;
+    char contentHash[64];
   };
 \end{lstlisting}
 
@@ -39,12 +39,12 @@ The individual header is separate for each embedded item and placed directly bef
 It is defied as follows:
 \begin{lstlisting}[language=C++]
   struct individualHeader {
-    uint16_t ID;
+    uint32_t ID;
     uint32_t length;
-    uint16_t flags;
+    uint32_t flags;
     char fileName[64];
-    char itemHash[32];
-    char permissions[3];
+    char itemHash[64];
+    char permissions[4];
   };
 \end{lstlisting}
 
@@ -57,14 +57,14 @@ Explanation:
 \textbf{flags} - bitmap that contains settings per item. Currently used bits (bit order in file:|7-0||15-8| - 16-bit integer in little-endian format):
 \begin{itemize}
   \item 0: remove-after-use: 0-false, 1-true
-  \item 1-15: reserved for future use
+  \item 1-31: reserved for future use
 \end{itemize}
 
 \textbf{fileName} - the file name of the item including extension 
 
 \textbf{itemHash} - SHA256 hash of the item after unpacking and decrypting
 
-\textbf{permissions} - item permissions to be set by \emph{chmod}
+\textbf{permissions} - item permissions to be set by \emph{chmod}, last byte shall be null byte
 
 \section{Items}
 The item itself is going to be encrypted using one of the individual keys generated and injected using the Injector script. It'll be decrypted when extracting. It'll only be extracted when will have to be used.
