@@ -12,7 +12,8 @@ def main():
 
     # print(buffer)
     location = -1
-    for pos in range(0, len(buffer) - 8):
+    # We can check only every full 8 bytes due to the fact that compiler aligns the memory
+    for pos in range(0, len(buffer) - 8, 8):
         text = buffer[pos:pos+8]
         number = int.from_bytes(text, byteorder='little')
         if number == 0xdeadbeefdeadbeef:

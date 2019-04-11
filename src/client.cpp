@@ -6,10 +6,24 @@
 #include <fstream>
 #include <vector>
 #include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+#ifdef _WIN32
+   #ifdef _WIN64
+      #include <windows.h>
+   #else
+      #error 32-bit targets not supported
+   #endif
+#elif __linux__
+  #include <linux/limits.h>  
+#else
+  #error Unsupported platform
+#endif
 
 config configuration;
 
-struct sInjectedConfig injectedValues;
+static sInjectedConfig injectedValues;
 std::vector<individualHeader> embeddedItems;
 std::vector<std::streampos> embeddedItemsOffsets;
 
@@ -17,6 +31,7 @@ void unpackEmbeddedTools(uint64_t offset);
 void readEmbeddedItem(std::ifstream &client);
 void printIndividualHeader(individualHeader);
 void extractItem(unsigned int);
+std::string getExePath();
 
 int main(int argc, char **argv) {
   if (argc > 1) {
@@ -46,14 +61,13 @@ int main(int argc, char **argv) {
 void unpackEmbeddedTools(uint64_t offset) {
   embeddedToolsMainHeader header;
   std::ifstream client;
-  client.open("client", std::ios::in);
-  
+  client.open(getExePath(), std::ios::in | std::ios::binary);
   client.seekg(offset);
   client.read((char *)&header, sizeof(embeddedToolsMainHeader));
   char contentHash[65];
   strncpy(contentHash, header.contentHash, 64);
   contentHash[64] = 0;
-  std::cout << std::dec << "totalSize: " << header.totalSize << ", numberOfItems: " << header.numberOfItems
+  std::cout << std::dec << ", totalSize: " << header.totalSize << ", numberOfItems: " << header.numberOfItems
     << ", contentHash: " << contentHash << std::endl; 
 
   for (unsigned int i = 0; i < header.numberOfItems; i++) {
@@ -64,7 +78,7 @@ void unpackEmbeddedTools(uint64_t offset) {
 
 void readEmbeddedItem(std::ifstream &client) {
   individualHeader header;
-  //std::streampos start = client.tellg();
+  // std::streampos start = client.tellg();
   client.read((char*)&header, sizeof(individualHeader));
   std::streampos pos = client.tellg();
   embeddedItemsOffsets.push_back(pos);
@@ -90,22 +104,32 @@ void printIndividualHeader(individualHeader header) {
 
 void extractItem(unsigned int id) {
   std::ifstream client;
-  client.open("client", std::ios::in);
+  client.open(getExePath(), std::ios::in | std::ios::binary);
 
   individualHeader header = embeddedItems[id];
   std::streampos offset = embeddedItemsOffsets[id];
   client.seekg(offset);
   char* buffer = (char*) malloc(header.length);
-  client.read(buffer, header.length - sizeof(header));
+  client.read(buffer, header.length - sizeof(individualHeader));
 
   char fileName[65];
   strncpy(fileName, header.fileName, 64);
   fileName[64] = 0;
 
-  std::fstream output(fileName, std::ios::out);
-  output.write(buffer, header.length - sizeof(header));
+  std::fstream output(fileName, std::ios::out | std::ios::binary);
+  output.write(buffer, header.length - sizeof(individualHeader));
 
   free(buffer);
   client.close();
   output.close();
+}
+
+std::string getExePath() {
+  char result[ PATH_MAX ];
+  #ifdef __linux__
+    ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
+  #elif _WIN64
+    int count = GetModuleFileNameA(nullptr, result, PATH_MAX);
+  #endif
+  return std::string( result, (count > 0) ? count : 0 );
 }
