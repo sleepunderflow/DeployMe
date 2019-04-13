@@ -4,10 +4,10 @@
 #include <string>
 #include "definitions/types.h"
 
-struct config {
+typedef struct {
   std::string lang;
   struct texts texts;
-};
+} config;
 
 void extractConfig(int argc, char **argv);
 void setDefaultConfig();

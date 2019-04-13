@@ -17,6 +17,7 @@ internalStructureSize = 24
 
 areItemsInjected = False
 areItemsEncrypted = False
+requirePrivilegeElevation = True
 
 
 def resetHasher():
@@ -306,6 +307,8 @@ def generateInternalStructureFlags():
         flags |= 1
     if areItemsEncrypted:
         flags |= 2
+    if requirePrivilegeElevation:
+        flags |= 4
 
     return flags
 
