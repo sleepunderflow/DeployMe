@@ -1,5 +1,6 @@
 #include <iostream>
 #include "definitions/types.h"
+#include "definitions/constants.h"
 #include "config.h"
 #include "injectedValues.h"
 #include <string>
@@ -38,7 +39,7 @@ std::vector<individualHeader> embeddedItems;
 std::vector<std::streampos> embeddedItemsOffsets;
 
 // Function declarations
-void unpackEmbeddedTools(uint64_t offset);
+void readEmbeddedToolInformation(uint64_t offset);
 void readEmbeddedItem(std::ifstream &client);
 void printIndividualHeader(individualHeader);
 void extractItem(unsigned int);
@@ -46,6 +47,7 @@ void checkForPrivileges();
 std::string getExePath();
 void showErrorAndExit(std::string, int);
 void showError(std::string);
+void checkIfReadSuccessful(std::istream&);
 
 // Platform specific variables and functions
 #ifdef _WIN64
@@ -71,65 +73,118 @@ int main(int argc, char** argv) {
 
   checkForPrivileges();
 
-  std::cout << "Main header: " << sizeof(embeddedToolsMainHeader) << ", individual Header: "
-    << sizeof(individualHeader) << std::endl;
+  // Display welcome line in a correct language
   std::cout << configuration.texts.hello << std::endl;
-  for (int i = 0; i < 0xff; i++){}
-  std::cout << std::hex << injectedValues.header << '\n' << injectedValues.flags 
-    << '\n' << injectedValues.injectedDataOffset << std::endl;
-  if (injectedValues.flags && 1)
-    unpackEmbeddedTools(injectedValues.injectedDataOffset);
+
+  // Display information about injected values
+  std::cout << std::hex << "Header: " << injectedValues.header 
+    << "\nFlags: " << injectedValues.flags 
+    << "\nOffset of injected data " << injectedValues.injectedDataOffset 
+    << std::endl;
+
+  // If the flag says that there exist embedded data, unpack them
+  if (injectedValues.flags && FLAG_EMBEDPRESENT)
+    readEmbeddedToolInformation(injectedValues.injectedDataOffset);
+
   for (auto& header: embeddedItems) {
     printIndividualHeader(header);
   }
   for (unsigned int i = 0; i < embeddedItems.size(); i++) {
     extractItem(i);
   }
+
   return 0;
 }
 
-void unpackEmbeddedTools(uint64_t offset) {
+/*
+* Arguments: 
+* - uint64_t offset - offset at which the embedded files start
+*
+* This function tries to read the main header for embedded items and 
+*   calls functions filling structures for each of the embedded files
+*/
+void readEmbeddedToolInformation(uint64_t offset) {
   embeddedToolsMainHeader header;
   std::ifstream client;
+  char contentHash[65] = {0};
+
+  // Open itself as a file for reading in binary mode
   client.open(getExePath(), std::ios::in | std::ios::binary);
   client.seekg(offset);
   client.read((char *)&header, sizeof(embeddedToolsMainHeader));
-  char contentHash[65];
-  strncpy(contentHash, header.contentHash, 64);
-  contentHash[64] = 0;
-  std::cout << std::dec << "totalSize: " << header.totalSize << ", numberOfItems: " << header.numberOfItems
-    << ", contentHash: " << contentHash << std::endl; 
+  checkIfReadSuccessful(client);
 
+  // Unpack the hash (probably is not NULL-terminated so can't just use it as a string directly)
+  strncpy(contentHash, header.contentHash, 64);
+
+  std::cout << std::dec << "totalSize: " << header.totalSize 
+    << ", numberOfItems: " << header.numberOfItems
+    << ", contentHash: " << contentHash 
+    << std::endl; 
+
+  // Process every injected item up to the specified number of items
   for (unsigned int i = 0; i < header.numberOfItems; i++) {
     readEmbeddedItem(client);
   }
+
   client.close();
 }
 
+
+/*
+* Arguments:
+* - std::ifstream &client - opened file object from which to read
+*   the item information - variable state will be modified
+*
+* This function reads the embedded item information from the file
+*   pushes the obtained header to the global vector object 
+*   and advances the file state to right after the current embedded item
+*
+* Modified global objects:
+* - embeddedItems - added data
+* - embeddedItemsOffsets - added data
+*/
 void readEmbeddedItem(std::ifstream &client) {
   individualHeader header;
-  // std::streampos start = client.tellg();
+  // Read the header
   client.read((char*)&header, sizeof(individualHeader));
+  checkIfReadSuccessful(client);
+
+  embeddedItems.push_back(header);
+  // Get the current position in the file and push it to the vector
   std::streampos pos = client.tellg();
   embeddedItemsOffsets.push_back(pos);
+  // Move on to the next item
   pos += header.length - sizeof(individualHeader);
   client.seekg(pos);
-  embeddedItems.push_back(header);
 }
 
+/*
+* Arguments:
+* - individualHeader header - individualHeader object that was read 
+*   from the source file
+*
+* This function displays information that was read from the source file 
+*   as a header of embedded file
+*/
 void printIndividualHeader(individualHeader header) {
-  char permissions[4];
-  permissions[3] = 0; 
+  /* Values are unlikely to be null-terminated so each of them has to 
+  *  be individually copied over to a char array and null terminated */
+  char permissions[4] = {0};
+  char itemHash[65] = {0};
+  char fileName[65] = {0};
+
   strncpy(permissions, header.permissions, 3);
-  char itemHash[65];
   strncpy(itemHash, header.itemHash, 64);
-  itemHash[64] = 0;
-  char fileName[65];
   strncpy(fileName, header.fileName, 64);
-  fileName[64] = 0;
-  std::cout << std::dec << "Id: " << header.ID << ", length: " << header.length << ", flags: " 
-    << header.flags << ", file name: " << fileName << ", item hash: " 
-    << itemHash << ", permissions: " << permissions << std::endl;
+
+  std::cout << std::dec << "Id: " << header.ID 
+    << ", length: " << header.length 
+    << ", flags: " << header.flags 
+    << ", file name: " << fileName 
+    << ", item hash: " << itemHash 
+    << ", permissions: " << permissions 
+    << std::endl;
 }
 
 void extractItem(unsigned int id) {
@@ -141,6 +196,7 @@ void extractItem(unsigned int id) {
   client.seekg(offset);
   char* buffer = (char*) malloc(header.length);
   client.read(buffer, header.length - sizeof(individualHeader));
+  checkIfReadSuccessful(client);
 
   char fileName[65];
   strncpy(fileName, header.fileName, 64);
@@ -185,7 +241,7 @@ std::string getExePath() {
 
 void checkForPrivileges() {
   // If elevate privileges bit is not set just ignore
-  if ((injectedValues.flags & 4) == 0)
+  if (injectedValues.flags & FLAG_ELEVATE)
     return;
 
   #ifdef __linux__
@@ -246,5 +302,14 @@ void showError(std::string message) {
   #endif
   {
     std::cerr << message << std::endl; 
+  }
+}
+
+void checkIfReadSuccessful(std::istream& file) {
+  if (file.fail()) {
+    if (file.eof())
+      showErrorAndExit("Run out of data before finished processing", ERR_NOTENOUGHDATA);
+    else 
+      showErrorAndExit("Unknown error while reading the source file", ERR_UNKOWNFILEERROR);
   }
 }
