@@ -146,16 +146,26 @@ void readEmbeddedToolInformation(uint64_t offset) {
 */
 void readEmbeddedItem(std::ifstream &client) {
   individualHeader header;
-  // Read the header
-  client.read((char*)&header, sizeof(individualHeader));
+  // Read the header without extra data
+  client.read((char*)&header, sizeof(individualHeader)-sizeof(header.additionalData));
   checkIfReadSuccessful(client);
+
+  int metadataSize = header.headerLength-144;
+
+  header.additionalData = (char*)malloc(metadataSize + 1);
+  if (header.additionalData == nullptr) {
+    showErrorAndExit("Can't allocate memory for item metadata", -2);
+  }
+  
+  header.additionalData[metadataSize] = 0;
+  client.read(header.additionalData, metadataSize);
 
   embeddedItems.push_back(header);
   // Get the current position in the file and push it to the vector
   std::streampos pos = client.tellg();
   embeddedItemsOffsets.push_back(pos);
   // Move on to the next item
-  pos += header.length - sizeof(individualHeader);
+  pos += header.payloadLength;
   client.seekg(pos);
 }
 
@@ -170,20 +180,19 @@ void readEmbeddedItem(std::ifstream &client) {
 void printIndividualHeader(individualHeader header) {
   /* Values are unlikely to be null-terminated so each of them has to 
   *  be individually copied over to a char array and null terminated */
-  char permissions[4] = {0};
   char itemHash[65] = {0};
   char fileName[65] = {0};
 
-  strncpy(permissions, header.permissions, 3);
   strncpy(itemHash, header.itemHash, 64);
   strncpy(fileName, header.fileName, 64);
 
   std::cout << std::dec << "Id: " << header.ID 
-    << ", length: " << header.length 
+    << ", payload length: " << header.payloadLength 
+    << ", header length: " << header.headerLength 
     << ", flags: " << header.flags 
     << ", file name: " << fileName 
     << ", item hash: " << itemHash 
-    << ", permissions: " << permissions 
+    << ", additional metadata: " << header.additionalData 
     << std::endl;
 }
 
@@ -194,8 +203,8 @@ void extractItem(unsigned int id) {
   individualHeader header = embeddedItems[id];
   std::streampos offset = embeddedItemsOffsets[id];
   client.seekg(offset);
-  char* buffer = (char*) malloc(header.length);
-  client.read(buffer, header.length - sizeof(individualHeader));
+  char* buffer = (char*) malloc(header.payloadLength);
+  client.read(buffer, header.payloadLength);
   checkIfReadSuccessful(client);
 
   char fileName[65];
@@ -203,7 +212,7 @@ void extractItem(unsigned int id) {
   fileName[64] = 0;
 
   std::fstream output(fileName, std::ios::out | std::ios::binary);
-  output.write(buffer, header.length - sizeof(individualHeader));
+  output.write(buffer, header.payloadLength);
 
   free(buffer);
   client.close();

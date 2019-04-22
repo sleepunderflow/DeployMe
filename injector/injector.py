@@ -51,11 +51,11 @@ class fileToInject:
         self.ID = ID
         self.name = ""
         self.path = ""
-        self.permissions = "755"
+        self.additionalData = ""
         self.setDefaultFlags()
         self.hash = ""
         # set length to a header size
-        self.length = 144
+        self.length = 0
 
     def setDefaultFlags(self):
         '''Sets default flags for the file. For details check the documentation.'''
@@ -69,22 +69,22 @@ class fileToInject:
         self.path = path
         self.name = path_leaf(path)
 
-    def setPermissions(self, permissions):
-        '''
-        Sets the permissions of the file that will be set after extraction.
+    # def setPermissions(self, permissions):
+    #     '''
+    #     Sets the permissions of the file that will be set after extraction.
 
-        The format for the permission field is the same as for chmod under unix 
-        (numerical representation). It is 3 characters, each being between 0 and 7.
-        '''
+    #     The format for the permission field is the same as for chmod under unix 
+    #     (numerical representation). It is 3 characters, each being between 0 and 7.
+    #     '''
 
-        allowedPermissionCharacters = "01234567"
-        if len(permissions) != 3 \
-                or permissions[0] not in allowedPermissionCharacters \
-                or permissions[1] not in allowedPermissionCharacters \
-                or permissions[2] not in allowedPermissionCharacters:
-            raise ValueError(
-                "Incorrect file permission format. Expected format is the numeric format used by chmod (for example 755). Got {0}".format(permissions))
-        self.permissions = permissions
+    #     allowedPermissionCharacters = "01234567"
+    #     if len(permissions) != 3 \
+    #             or permissions[0] not in allowedPermissionCharacters \
+    #             or permissions[1] not in allowedPermissionCharacters \
+    #             or permissions[2] not in allowedPermissionCharacters:
+    #         raise ValueError(
+    #             "Incorrect file permission format. Expected format is the numeric format used by chmod (for example 755). Got {0}".format(permissions))
+    #     self.permissions = permissions
 
     def setItemNameForCommands(self, name):
         '''Sets the name for the injected item to be used later with generating commands.'''
@@ -103,8 +103,8 @@ class fileToInject:
     def print(self):
         '''Display the most important fields in the class.'''
 
-        print("ID = {4}, Name = {0}, Path = {1}, Permissions = {2}, Flags = {3}".format(
-            self.name, self.path, self.permissions, self.flags, self.ID))
+        print("ID = {3}, Name = {0}, Path = {1}, Flags = {2}".format(
+            self.name, self.path, self.flags, self.ID))
 
     def validate(self):
         '''Check if the required fields are set. If not raise an exception.'''
@@ -135,21 +135,19 @@ class fileToInject:
         else:
             while len(self.name) != 64:
                 self.name += '\0'
-        self.permissions += '\0'
         return {'ID': self.ID.to_bytes(4, byteorder='little'),
-                'length': self.length.to_bytes(4, byteorder='little'),
+                'headerLength': (144+len(self.additionalData)).to_bytes(4, byteorder='little'),
+                'payloadLength': self.length.to_bytes(4, byteorder='little'),
                 'flags': self.flags.to_bytes(4, byteorder='little'),
                 'fileName': self.name.encode('ascii'),
                 'itemHash': self.hash.encode('ascii'),
-                'permissions': self.permissions.encode('ascii')}
+                'additionalData': self.additionalData.encode('ascii')}
 
     def parseConfig(self, key, value):
         '''Parse a single line of a configuration. Details in a documentation.'''
 
         if key == 'path':
             self.setPath(value)
-        elif key == 'permissions':
-            self.setPermissions(value)
         elif key == 'name':
             self.setItemNameForCommands(value)
         elif key in ['remove-after-use']:
@@ -230,11 +228,12 @@ def processOriginalItemToInject(item):
 def writeItemHeader(item, target):
     header = item.generateHeader()
     target.write(header['ID'])
-    target.write(header['length'])
+    target.write(header['headerLength'])
+    target.write(header['payloadLength'])
     target.write(header['flags'])
     target.write(header['fileName'])
     target.write(header['itemHash'])
-    target.write(header['permissions'])
+    target.write(header['additionalData'])
 
 
 def addEmbeddedTools(item):
@@ -265,6 +264,10 @@ def parseConfigFile(line):
 
     # ignore empty lines
     if line == '':
+        pass
+
+    # and comments
+    elif line[0] == '#':
         pass
 
     elif line == '[Item]':
