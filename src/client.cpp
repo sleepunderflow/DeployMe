@@ -132,18 +132,18 @@ void readEmbeddedToolInformation(uint64_t offset) {
 
 
 /*
-* Arguments:
-* - std::ifstream &client - opened file object from which to read
-*   the item information - variable state will be modified
-*
-* This function reads the embedded item information from the file
-*   pushes the obtained header to the global vector object 
-*   and advances the file state to right after the current embedded item
-*
-* Modified global objects:
-* - embeddedItems - added data
-* - embeddedItemsOffsets - added data
-*/
+ * Arguments:
+ * - std::ifstream &client - opened file object from which to read
+ *   the item information - variable state will be modified
+ *
+ * This function reads the embedded item information from the file
+ *   pushes the obtained header to the global vector object 
+ *   and advances the file state to right after the current embedded item
+ *
+ * Modified global objects:
+ * - embeddedItems - added data
+ * - embeddedItemsOffsets - added data
+ */
 void readEmbeddedItem(std::ifstream &client) {
   individualHeader header;
   // Read the header without extra data
@@ -170,13 +170,13 @@ void readEmbeddedItem(std::ifstream &client) {
 }
 
 /*
-* Arguments:
-* - individualHeader header - individualHeader object that was read 
-*   from the source file
-*
-* This function displays information that was read from the source file 
-*   as a header of embedded file
-*/
+ * Arguments:
+ * - individualHeader header - individualHeader object that was read 
+ *   from the source file
+ *
+ * This function displays information that was read from the source file 
+ *   as a header of embedded file
+ */
 void printIndividualHeader(individualHeader header) {
   /* Values are unlikely to be null-terminated so each of them has to 
   *  be individually copied over to a char array and null terminated */
@@ -196,6 +196,13 @@ void printIndividualHeader(individualHeader header) {
     << std::endl;
 }
 
+/*
+ * Arguments: 
+ * - unsigned int id: ID of an item to be unpacked
+ * 
+ * This function takes a numerical ID of an embedded item, goes to the corresponding 
+ * offset in the executable and extracts the file to the requested file name
+ */
 void extractItem(unsigned int id) {
   std::ifstream client;
   client.open(getExePath(), std::ios::in | std::ios::binary);

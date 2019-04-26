@@ -1,5 +1,9 @@
 \usepackage[utf8]{inputenc}
 
+\newcommand{\documenttitle}{DeployMe}
+\newcommand{\documentauthor}{sleepunderflow}
+\newcommand{\headercontent}{\documenttitle{} - \documentauthor{}}
+
 \usepackage[T1]{fontenc}
 \usepackage{enumitem}
 \usepackage{listings}
@@ -16,8 +20,19 @@
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{color}
- 
 
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle=\documenttitle{}, 
+    bookmarks=true,
+    pdfpagemode=FullScreen,
+    pdfauthor=\documentauthor{}
+}
+
+% I prefer smaller margins than default, sorry
 \geometry{
   a4paper,
   left=40mm,
@@ -26,32 +41,38 @@
   bottom=40mm
 }
 
-\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
-\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[C]{licensingSystem Documentation}
+\fancyhead[C]{\headercontent{}} 
 
 \fancypagestyle{empty}{
  \fancyhf{}
- \fancyhead[C]{licensingSystem Documentation}
+ \fancyhead[C]{\headercontent{}}
 }
 
 \fancypagestyle{plain}{}
 
+
+% just adds the "Page 2 of 20" on the bottom
 \rfoot{Page \thepage \hspace{1pt} of \pageref*{LastPage}}
 
-\graphicspath{ {images/} }
 
-\title{licensingSystem Documentation}
-\author{sleepundeflow}
-\date{v0.0.1}
+\title{\documenttitle{}}
+\author{\documentauthor{}}
+\date{\today}
 
-\newcommand{\sectionparagraph}[1]{section \ref{#1} on page \pageref{#1}}
 
 \renewcommand{\contentsname}{Table of contents}
 \renewcommand{\listfigurename}{List of figures}
 \renewcommand{\listtablename}{List of tables}
 
+% For table word wrapping
 \emergencystretch=1em
+
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+
