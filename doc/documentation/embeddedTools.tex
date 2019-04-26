@@ -40,11 +40,12 @@ It is defied as follows:
 \begin{lstlisting}[language=C++]
   struct individualHeader {
     uint32_t ID;
-    uint32_t length;
+    uint32_t headerLength;
+    uint32_t payloadLength;
     uint32_t flags;
     char fileName[64];
     char itemHash[64];
-    char permissions[4];
+    char[] additionalData;
   };
 \end{lstlisting}
 
@@ -52,7 +53,9 @@ Explanation:
 
 \textbf{ID} - numeric ID of the item. Starts from 0 and is being incremented by 1.
 
-\textbf{length} - length of the item (excluding individual header)
+\textbf{headerLength} - size of the individualHeader structure including additional data in bytes
+
+\textbf{payloadLength} - length of the item (excluding individual header)
 
 \textbf{flags} - bitmap that contains settings per item. Currently used bits (bit order in file:|7-0||15-8| - 16-bit integer in little-endian format):
 \begin{itemize}
@@ -64,7 +67,10 @@ Explanation:
 
 \textbf{itemHash} - SHA256 hash of the item after unpacking and decrypting
 
-\textbf{permissions} - item permissions to be set by \emph{chmod}, last byte shall be null byte
+\textbf{additionalData} - extra metadata for the extractor in a form defined in \autoref{sec-additionalData}. The length of that data has to be \texttt{(headerLength-144)} 
 
 \section{Items}
 The item itself is going to be encrypted using one of the individual keys generated and injected using the Injector script. It'll be decrypted when extracting. It'll only be extracted when will have to be used.
+
+\section{additionalData}
+\label{sec-additionalData}

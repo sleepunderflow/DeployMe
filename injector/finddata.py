@@ -1,4 +1,8 @@
 #!/usr/bin/python3
+
+''' This script is only meant to help checking the
+injected structure for debugging purposes '''
+
 import struct
 import sys
 

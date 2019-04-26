@@ -132,61 +132,77 @@ void readEmbeddedToolInformation(uint64_t offset) {
 
 
 /*
-* Arguments:
-* - std::ifstream &client - opened file object from which to read
-*   the item information - variable state will be modified
-*
-* This function reads the embedded item information from the file
-*   pushes the obtained header to the global vector object 
-*   and advances the file state to right after the current embedded item
-*
-* Modified global objects:
-* - embeddedItems - added data
-* - embeddedItemsOffsets - added data
-*/
+ * Arguments:
+ * - std::ifstream &client - opened file object from which to read
+ *   the item information - variable state will be modified
+ *
+ * This function reads the embedded item information from the file
+ *   pushes the obtained header to the global vector object 
+ *   and advances the file state to right after the current embedded item
+ *
+ * Modified global objects:
+ * - embeddedItems - added data
+ * - embeddedItemsOffsets - added data
+ */
 void readEmbeddedItem(std::ifstream &client) {
   individualHeader header;
-  // Read the header
-  client.read((char*)&header, sizeof(individualHeader));
+  // Read the header without extra data
+  client.read((char*)&header, sizeof(individualHeader)-sizeof(header.additionalData));
   checkIfReadSuccessful(client);
+
+  int metadataSize = header.headerLength-144;
+
+  header.additionalData = (char*)malloc(metadataSize + 1);
+  if (header.additionalData == nullptr) {
+    showErrorAndExit("Can't allocate memory for item metadata", -2);
+  }
+  
+  header.additionalData[metadataSize] = 0;
+  client.read(header.additionalData, metadataSize);
 
   embeddedItems.push_back(header);
   // Get the current position in the file and push it to the vector
   std::streampos pos = client.tellg();
   embeddedItemsOffsets.push_back(pos);
   // Move on to the next item
-  pos += header.length - sizeof(individualHeader);
+  pos += header.payloadLength;
   client.seekg(pos);
 }
 
 /*
-* Arguments:
-* - individualHeader header - individualHeader object that was read 
-*   from the source file
-*
-* This function displays information that was read from the source file 
-*   as a header of embedded file
-*/
+ * Arguments:
+ * - individualHeader header - individualHeader object that was read 
+ *   from the source file
+ *
+ * This function displays information that was read from the source file 
+ *   as a header of embedded file
+ */
 void printIndividualHeader(individualHeader header) {
   /* Values are unlikely to be null-terminated so each of them has to 
   *  be individually copied over to a char array and null terminated */
-  char permissions[4] = {0};
   char itemHash[65] = {0};
   char fileName[65] = {0};
 
-  strncpy(permissions, header.permissions, 3);
   strncpy(itemHash, header.itemHash, 64);
   strncpy(fileName, header.fileName, 64);
 
   std::cout << std::dec << "Id: " << header.ID 
-    << ", length: " << header.length 
+    << ", payload length: " << header.payloadLength 
+    << ", header length: " << header.headerLength 
     << ", flags: " << header.flags 
     << ", file name: " << fileName 
     << ", item hash: " << itemHash 
-    << ", permissions: " << permissions 
+    << ", additional metadata: " << header.additionalData 
     << std::endl;
 }
 
+/*
+ * Arguments: 
+ * - unsigned int id: ID of an item to be unpacked
+ * 
+ * This function takes a numerical ID of an embedded item, goes to the corresponding 
+ * offset in the executable and extracts the file to the requested file name
+ */
 void extractItem(unsigned int id) {
   std::ifstream client;
   client.open(getExePath(), std::ios::in | std::ios::binary);
@@ -194,8 +210,8 @@ void extractItem(unsigned int id) {
   individualHeader header = embeddedItems[id];
   std::streampos offset = embeddedItemsOffsets[id];
   client.seekg(offset);
-  char* buffer = (char*) malloc(header.length);
-  client.read(buffer, header.length - sizeof(individualHeader));
+  char* buffer = (char*) malloc(header.payloadLength);
+  client.read(buffer, header.payloadLength);
   checkIfReadSuccessful(client);
 
   char fileName[65];
@@ -203,7 +219,7 @@ void extractItem(unsigned int id) {
   fileName[64] = 0;
 
   std::fstream output(fileName, std::ios::out | std::ios::binary);
-  output.write(buffer, header.length - sizeof(individualHeader));
+  output.write(buffer, header.payloadLength);
 
   free(buffer);
   client.close();

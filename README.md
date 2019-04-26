@@ -1,12 +1,40 @@
-# licensingSystem
+# DeployMe
 
-Suggestions:
-- Server can be done in python3 flask framework (I can provide hosting after we leave dev phase) (needs more research into the framework itself)
-- I'm still working on specs, If you have any idea let me know/add them to the docs
-- Any suggestions? Say it
+## About
+DeployMe is an automatic configuration and deployment package for Linux and Windows. It is designed to allow for creation of easily configurable packages that when executed will extract injected files and execute requested commands in a secure way.
 
-Dev suggested rules:
-- use Issues
-- keep docs up to date whenever you change something (if you don't want to play with LaTeX just leave a txt file describing changes, I can add it later)
-- keep it nice and clean
-- Make sure to periodically check documentations. Especially dev hints and specs
+## Documentation
+Full documentation is available as a PDF document inside the doc directory ([here](https://github.com/sleepunderflow/DeployMe/blob/master/doc/documentation.pdf))
+
+## Parts
+The package will consist of three main parts:
+- Client binary
+- Injector script
+- Web Server (TODO)
+
+### Client
+It's a binary made in C++ that the injector appends the requested files to and that unpacks, decrypts and decompresses those files as well as connects to the web server to obtain license information and commands to execute.
+
+### Injector 
+Python script that generates all the necessary structures for the client to function correctly, injects the files, contacts the server to generate new license and uploads the list of commands to execute.
+
+### Web Server
+Most likely flask based server that will provide licensing information to the client and give encryption keys and commands that client is supposed to execute.
+
+## Status
+### Done
+- Basic unpacker
+- Injection of items
+- Injection of hashes
+
+### Doing
+- Validation of hashes
+- Additional metadata (permissions etc.)
+
+### To Do
+- Command execution
+- Encryption
+- Compression
+- Licensing system
+- Output collection and encryption
+- Conditional execution
