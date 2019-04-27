@@ -26,12 +26,13 @@ Most likely flask based server that will provide licensing information to the cl
 - Basic unpacker
 - Injection of items
 - Injection of hashes
+- Validation of hashes for individual items
 
 ### Doing
-- Validation of hashes
 - Additional metadata (permissions etc.)
 
 ### To Do
+- hash validation for injected block as a whole
 - Command execution
 - Encryption
 - Compression

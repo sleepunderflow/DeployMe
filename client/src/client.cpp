@@ -9,6 +9,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <cstdio>
+
+#include <openssl/evp.h>
 
 #ifdef _WIN32
   // Only on Windows
@@ -48,6 +51,7 @@ std::string getExePath();
 void showErrorAndExit(std::string, int);
 void showError(std::string);
 void checkIfReadSuccessful(std::istream&);
+void checkHash(char*, unsigned int, char*);
 
 // Platform specific variables and functions
 #ifdef _WIN64
@@ -214,6 +218,8 @@ void extractItem(unsigned int id) {
   client.read(buffer, header.payloadLength);
   checkIfReadSuccessful(client);
 
+  checkHash(buffer, header.payloadLength, header.itemHash);
+
   char fileName[65];
   strncpy(fileName, header.fileName, 64);
   fileName[64] = 0;
@@ -328,4 +334,25 @@ void checkIfReadSuccessful(std::istream& file) {
     else 
       showErrorAndExit("Unknown error while reading the source file", ERR_UNKOWNFILEERROR);
   }
+}
+
+void checkHash(char* data, unsigned int length, char* expectedHash) {
+  unsigned char md_value[EVP_MAX_MD_SIZE];
+  unsigned int md_len;
+  const EVP_MD* md = EVP_sha256();
+  if (md == NULL)
+    showErrorAndExit("Can't create hash function", 4);
+  EVP_MD_CTX *mdctx;
+  mdctx = EVP_MD_CTX_new();
+  EVP_DigestInit_ex(mdctx, md, NULL);
+  EVP_DigestUpdate(mdctx, data, length);
+  EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+  EVP_MD_CTX_free(mdctx);
+
+  char hexdigest[65] = {0};
+  for (unsigned int i = 0; i < md_len; i++)
+    sprintf(hexdigest+i*2, "%02x", md_value[i]);
+  
+  if (strncmp(hexdigest, expectedHash, 64) != 0)
+    showErrorAndExit("Hash of embedded item doesn't match", 10);
 }
