@@ -74,3 +74,13 @@ The item itself is going to be encrypted using one of the individual keys genera
 
 \section{additionalData}
 \label{sec-additionalData}
+Any additional metadata and information regarding the individual item is stored here as a continuous string, the format is (there's no spaces in between elements):
+
+\texttt{opcode [length] data}
+
+where opcode is a byte of the given value (in hex) and length parameter is only present for some opcodes.
+
+Currently defined opcodes:
+\begin{itemize}
+  \item \textbf{0x01 permission} - specify permission for the extracted item, only valid on Linux. Permission is a 3-digit number (ascii characters) representing permissions in chmod format (for example 644 or 777) 
+\end{itemize}

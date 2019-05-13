@@ -158,7 +158,7 @@ void readEmbeddedItem(std::ifstream &client) {
 
   header.additionalData = (char*)malloc(metadataSize + 1);
   if (header.additionalData == nullptr) {
-    showErrorAndExit("Can't allocate memory for item metadata", -2);
+    showErrorAndExit(configuration.texts.cantAllocateMemoryMetadata, -2);
   }
   
   header.additionalData[metadataSize] = 0;
@@ -276,7 +276,7 @@ void checkForPrivileges() {
       // Launch itself as administrator. 
       wchar_t szPath[MAX_PATH]; 
       if (!GetModuleFileName(NULL, (LPSTR)szPath, ARRAYSIZE(szPath)))
-        showErrorAndExit("Something went wrong!", -1);
+        showErrorAndExit(configuration.texts.somethingWentWrong, -1);
 
       SHELLEXECUTEINFO sei = { sizeof(sei) }; 
       sei.lpVerb = (LPCSTR)"runas"; 

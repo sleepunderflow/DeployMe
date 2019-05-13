@@ -3,9 +3,9 @@
 
 #include "definitions/types.h"
 
-texts getLanguage(std::string language);
-texts getLangEN_GB();
-texts getLangPL_PL();
+translation getLanguage(std::string language);
+translation getLangEN_GB();
+translation getLangPL_PL();
 
 #endif //LANGUAGES_H
 

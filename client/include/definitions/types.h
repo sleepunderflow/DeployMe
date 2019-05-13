@@ -3,10 +3,12 @@
 #include <string>
 #include <iostream>
 
-struct texts
-{
+typedef struct{
   std::string hello;
-};
+  std::string cantAllocateMemoryMetadata;
+  std::string somethingWentWrong;
+  std::string thisProgramMustBeRunAsRoot;
+} translation;
 
 typedef struct {
   uint32_t totalSize;
@@ -23,5 +25,9 @@ typedef struct {
   char itemHash[64];
   char* additionalData;
 } individualHeader;
+
+typedef struct {
+  std::string permission;
+} metadata;
 
 #endif //TYPES_H
