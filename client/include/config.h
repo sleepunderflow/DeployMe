@@ -6,7 +6,7 @@
 
 typedef struct {
   std::string lang;
-  struct texts texts;
+  translation texts;
 } config;
 
 void extractConfig(int argc, char **argv);
