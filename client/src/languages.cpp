@@ -11,22 +11,51 @@ translation getLanguage(std::string language) {
 }
 
 translation getLangEN_GB() {
-  translation texts_EN_GB;
-  texts_EN_GB.hello = "Hello!";
-  texts_EN_GB.cantAllocateMemoryMetadata = "Can't allocate memory for item metadata";
-  texts_EN_GB.somethingWentWrong = "Something went wrong!";
-  texts_EN_GB.thisProgramMustBeRunAsRoot = "This program must be run as root!";
+  translation texts;
+  texts.hello = "Hello!";
+  texts.cantAllocateMemoryMetadata = "Can't allocate memory for item metadata";
+  texts.somethingWentWrong = "Something went wrong!";
+  texts.thisProgramMustBeRunAsRoot = "This program must be run as root!";
+  texts.header = "Header";
+  texts.flags = "Flags";
+  texts.offsetOfInjectedData = "Offset of injected data";
+  texts.incorrectNumberOfArguments = "Incorrect number of arguments to the program";
+  texts.requiresAParameter = "option requires a parameter";
+  texts.unknownParameter = "Unknown parameter ";
+  texts.runOutOfData = "Run out of data before finished processing";
+  texts.unknownErrorFileProcessing = "Unknown error while reading the source file";
+  texts.error = "ERROR";
+  texts.payloadLength = "payload length";
+  texts.headerLength = "header length";
+  texts.fileName = "File name";
+  texts.itemHash = "Item hash";
+  texts.additionalMetadata = "Additional metadata";
+  // texts. = "";
 
-  return texts_EN_GB;
+  return texts;
 }
 
 translation getLangPL_PL() {
   // Use en_GB as base so that if something is not translated it'll be displayed in english
-  translation texts_PL_PL = getLangEN_GB();
-  texts_PL_PL.hello = "Witam!";
-  texts_PL_PL.cantAllocateMemoryMetadata = "Nie można zaalokować pamięci dla metadanych obiektu";
-  texts_PL_PL.somethingWentWrong = "Coś poszło nie tak";
-  texts_PL_PL.thisProgramMustBeRunAsRoot = "Ten program musi być uruchomiony jako root!";
+  translation texts = getLangEN_GB();
+  texts.hello = "Witam!";
+  texts.cantAllocateMemoryMetadata = "Nie można zaalokować pamięci dla metadanych obiektu";
+  texts.somethingWentWrong = "Coś poszło nie tak";
+  texts.thisProgramMustBeRunAsRoot = "Ten program musi być uruchomiony jako root!";
+  texts.header = "Nagłówek";
+  texts.flags = "Flagi";
+  texts.offsetOfInjectedData = "Lokalizacja wstrzykniętych danych w pliku";
+  texts.incorrectNumberOfArguments = "Zła liczba parametrów do programu";
+  texts.requiresAParameter = "wymaga dodatkowego parametru";
+  texts.unknownParameter = "Nieznany parametr ";
+  texts.runOutOfData = "Skończyły się dane przed końcem przetwarzania";
+  texts.unknownErrorFileProcessing = "Nieznany błąd podczas czytania pliku źródłowego";
+  texts.error = "BŁĄD";
+  texts.payloadLength = "Długość danych";
+  texts.headerLength = "Długość nagłówka";
+  texts.fileName = "Nazwa pliku";
+  texts.itemHash = "Hash obiektu";
+  texts.additionalMetadata = "Dodatkowe metadane";
 
-  return texts_PL_PL;
+  return texts;
 }

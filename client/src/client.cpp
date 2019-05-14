@@ -3,6 +3,7 @@
 #include "definitions/constants.h"
 #include "config.h"
 #include "injectedValues.h"
+#include "errorHandling.h"
 #include <string>
 #include <fstream>
 #include <vector>
@@ -80,11 +81,13 @@ int main(int argc, char** argv) {
   // Display welcome line in a correct language
   std::cout << configuration.texts.hello << std::endl;
 
-  // Display information about injected values
-  std::cout << std::hex << "Header: " << injectedValues.header 
-    << "\nFlags: " << injectedValues.flags 
-    << "\nOffset of injected data " << injectedValues.injectedDataOffset 
-    << std::endl;
+  if (configuration.debugMode) {
+    // Display information about injected values
+    std::cout << std::hex << configuration.texts.header << ": " << injectedValues.header 
+      << "\n" << configuration.texts.flags << ": " << injectedValues.flags 
+      << "\n" << configuration.texts.offsetOfInjectedData << ": " << injectedValues.injectedDataOffset 
+      << std::endl;
+  }
 
   // If the flag says that there exist embedded data, unpack them
   if (injectedValues.flags && FLAG_EMBEDPRESENT)
@@ -121,10 +124,12 @@ void readEmbeddedToolInformation(uint64_t offset) {
   // Unpack the hash (probably is not NULL-terminated so can't just use it as a string directly)
   strncpy(contentHash, header.contentHash, 64);
 
-  std::cout << std::dec << "totalSize: " << header.totalSize 
-    << ", numberOfItems: " << header.numberOfItems
-    << ", contentHash: " << contentHash 
-    << std::endl; 
+  if (configuration.debugMode) {
+    std::cout << std::dec << "totalSize: " << header.totalSize 
+      << ", numberOfItems: " << header.numberOfItems
+      << ", contentHash: " << contentHash 
+      << std::endl; 
+  }
 
   // Process every injected item up to the specified number of items
   for (unsigned int i = 0; i < header.numberOfItems; i++) {
@@ -158,7 +163,7 @@ void readEmbeddedItem(std::ifstream &client) {
 
   header.additionalData = (char*)malloc(metadataSize + 1);
   if (header.additionalData == nullptr) {
-    showErrorAndExit(configuration.texts.cantAllocateMemoryMetadata, -2);
+    showErrorAndExit(configuration.texts.cantAllocateMemoryMetadata, ERR_MALLOCERROR);
   }
   
   header.additionalData[metadataSize] = 0;
@@ -190,14 +195,16 @@ void printIndividualHeader(individualHeader header) {
   strncpy(itemHash, header.itemHash, 64);
   strncpy(fileName, header.fileName, 64);
 
-  std::cout << std::dec << "Id: " << header.ID 
-    << ", payload length: " << header.payloadLength 
-    << ", header length: " << header.headerLength 
-    << ", flags: " << header.flags 
-    << ", file name: " << fileName 
-    << ", item hash: " << itemHash 
-    << ", additional metadata: " << header.additionalData 
-    << std::endl;
+  if (configuration.debugMode) {
+    std::cout << std::dec << "Id: " << header.ID 
+      << ", " << configuration.texts.payloadLength << ": " << header.payloadLength 
+      << ", " << configuration.texts.headerLength << ": " << header.headerLength 
+      << ", " << configuration.texts.flags << ": " << header.flags 
+      << ", " << configuration.texts.fileName << ": " << fileName 
+      << ", " << configuration.texts.itemHash << ": " << itemHash 
+      << ", " << configuration.texts.additionalMetadata << ": " << header.additionalData 
+      << std::endl;
+  }
 }
 
 /*
@@ -263,7 +270,7 @@ std::string getExePath() {
 
 void checkForPrivileges() {
   // If elevate privileges bit is not set just ignore
-  if (injectedValues.flags & FLAG_ELEVATE)
+  if (!(injectedValues.flags & FLAG_ELEVATE))
     return;
 
   #ifdef __linux__
@@ -286,7 +293,7 @@ void checkForPrivileges() {
       sei.nShow = SW_NORMAL | SEE_MASK_NOASYNC | SW_RESTORE  | SW_SHOW ; 
 
       if (!ShellExecuteEx(&sei)) 
-        showErrorAndExit("This program must be run as administrator!", -1);
+        showErrorAndExit(configuration.texts.thisProgramMustBeRunAsRoot, -1);
       else 
         // The child is going to take over now
         exit(0);
@@ -309,32 +316,6 @@ void checkForPrivileges() {
     }
   }
 #endif 
-
-void showErrorAndExit(std::string message, int exitCode) {
-  showError(message);
-  exit(exitCode);
-}
-
-void showError(std::string message) {
-  #ifdef _WIN64
-    // If it's windows and GUI application then show message box, otherwise do what linux does
-    if (!isConsoleApp)
-      MessageBox(NULL,message.c_str(),"ERROR",MB_OK|MB_ICONERROR);
-    else
-  #endif
-  {
-    std::cerr << message << std::endl; 
-  }
-}
-
-void checkIfReadSuccessful(std::istream& file) {
-  if (file.fail()) {
-    if (file.eof())
-      showErrorAndExit("Run out of data before finished processing", ERR_NOTENOUGHDATA);
-    else 
-      showErrorAndExit("Unknown error while reading the source file", ERR_UNKOWNFILEERROR);
-  }
-}
 
 void checkHash(char* data, unsigned int length, char* expectedHash) {
   unsigned char md_value[EVP_MAX_MD_SIZE];
