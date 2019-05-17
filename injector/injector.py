@@ -17,7 +17,7 @@ internalStructureSize = 24
 
 areItemsInjected = False
 areItemsEncrypted = False
-requirePrivilegeElevation = True
+requirePrivilegeElevation = False
 
 def writeEmbeddedTools(client):
     '''Append the heades and injected items to a given base binary'''

@@ -1,14 +1,8 @@
+#pragma once
 #ifndef TYPES_H
 #define TYPES_H
 #include <string>
 #include <iostream>
-
-typedef struct{
-  std::string hello;
-  std::string cantAllocateMemoryMetadata;
-  std::string somethingWentWrong;
-  std::string thisProgramMustBeRunAsRoot;
-} translation;
 
 typedef struct {
   uint32_t totalSize;
@@ -31,3 +25,28 @@ typedef struct {
 } metadata;
 
 #endif //TYPES_H
+
+
+typedef struct{
+  std::string hello;
+  std::string cantAllocateMemoryMetadata;
+  std::string somethingWentWrong;
+  std::string thisProgramMustBeRunAsRoot;
+  std::string header;
+  std::string flags;
+  std::string offsetOfInjectedData;
+  std::string incorrectNumberOfArguments;
+  std::string requiresAParameter;
+  std::string unknownParameter;
+  std::string runOutOfData;
+  std::string unknownErrorFileProcessing;
+  std::string error;
+  std::string payloadLength;
+  std::string headerLength;
+  std::string fileName;
+  std::string itemHash;
+  std::string additionalMetadata;
+  std::string cantCreateHashFunction;
+  std::string cantGetConsoleScreenBuffer;
+  std::string itemHashDoesntMatch;
+} translation;
