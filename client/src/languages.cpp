@@ -30,6 +30,9 @@ translation getLangEN_GB() {
   texts.fileName = "File name";
   texts.itemHash = "Item hash";
   texts.additionalMetadata = "Additional metadata";
+  texts.cantCreateHashFunction = "Can't create hash function";
+  texts.cantGetConsoleScreenBuffer = "Can't get console screen buffer info";
+  texts.itemHashDoesntMatch = "Hash of embedded item doesn't match";
   // texts. = "";
 
   return texts;
@@ -56,6 +59,9 @@ translation getLangPL_PL() {
   texts.fileName = "Nazwa pliku";
   texts.itemHash = "Hash obiektu";
   texts.additionalMetadata = "Dodatkowe metadane";
+  texts.cantCreateHashFunction = "Nie można utworzyć funkcji hashującej";
+  texts.cantGetConsoleScreenBuffer = "Nie można uzyskać informacji o buforze konsoli";
+  texts.itemHashDoesntMatch = "Hash dodanego obiektu się nie zgadza";
 
   return texts;
 }

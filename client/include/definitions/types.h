@@ -46,4 +46,7 @@ typedef struct{
   std::string fileName;
   std::string itemHash;
   std::string additionalMetadata;
+  std::string cantCreateHashFunction;
+  std::string cantGetConsoleScreenBuffer;
+  std::string itemHashDoesntMatch;
 } translation;

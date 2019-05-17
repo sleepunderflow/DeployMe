@@ -276,14 +276,14 @@ void checkForPrivileges() {
   #ifdef __linux__
     // If not being run as root then exit
     if (getuid() != 0) 
-      showErrorAndExit("This program must be run as root!", -1);
+      showErrorAndExit(configuration.texts.thisProgramMustBeRunAsRoot, ERR_UNSUFFICIENTPRIVILEGES);
   #elif _WIN64
     bool isAdmin = IsElevated();
     if (!isAdmin) {
       // Launch itself as administrator. 
       wchar_t szPath[MAX_PATH]; 
       if (!GetModuleFileName(NULL, (LPSTR)szPath, ARRAYSIZE(szPath)))
-        showErrorAndExit(configuration.texts.somethingWentWrong, -1);
+        showErrorAndExit(configuration.texts.somethingWentWrong, ERR_WINAPIERROR);
 
       SHELLEXECUTEINFO sei = { sizeof(sei) }; 
       sei.lpVerb = (LPCSTR)"runas"; 
@@ -293,7 +293,7 @@ void checkForPrivileges() {
       sei.nShow = SW_NORMAL | SEE_MASK_NOASYNC | SW_RESTORE  | SW_SHOW ; 
 
       if (!ShellExecuteEx(&sei)) 
-        showErrorAndExit(configuration.texts.thisProgramMustBeRunAsRoot, -1);
+        showErrorAndExit(configuration.texts.thisProgramMustBeRunAsRoot, ERR_UNSUFFICIENTPRIVILEGES);
       else 
         // The child is going to take over now
         exit(0);
@@ -307,7 +307,7 @@ void checkForPrivileges() {
     // Get handle to the console info
     HANDLE hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!GetConsoleScreenBufferInfo(hStdOutput, &csbi))
-      showError("GetConsoleScreenBufferInfo failed");
+      showError(configuration.texts.cantGetConsoleScreenBuffer);
     // if cursor position is (0,0) then we are running as GUI
     if ((!csbi.dwCursorPosition.X) && (!csbi.dwCursorPosition.Y)) {
       // In that case just get rid of the console window and set the flag
@@ -322,7 +322,7 @@ void checkHash(char* data, unsigned int length, char* expectedHash) {
   unsigned int md_len;
   const EVP_MD* md = EVP_sha256();
   if (md == NULL)
-    showErrorAndExit("Can't create hash function", 4);
+    showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
   EVP_MD_CTX *mdctx;
   mdctx = EVP_MD_CTX_new();
   EVP_DigestInit_ex(mdctx, md, NULL);
@@ -335,5 +335,5 @@ void checkHash(char* data, unsigned int length, char* expectedHash) {
     sprintf(hexdigest+i*2, "%02x", md_value[i]);
   
   if (strncmp(hexdigest, expectedHash, 64) != 0)
-    showErrorAndExit("Hash of embedded item doesn't match", 10);
+    showErrorAndExit(configuration.texts.itemHashDoesntMatch, ERR_ITEMHASHDONTMATCH);
 }
