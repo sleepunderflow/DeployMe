@@ -1,5 +1,11 @@
 #!/usr/bin/python3
 
+''' 
+This is the last moment to turn around and escape the horror
+which is this code, I tried to make it nice and relatively secure
+but it didn't quite work out.
+'''
+
 from flask import Flask
 from flask import request
 from flask import render_template
@@ -7,7 +13,15 @@ from flask import json
 
 from requests import *
 
+'''
+Seriously, last chance
+'''
+
 database.setup()
+
+'''
+You have been warned
+'''
 
 app = Flask(__name__)
 
