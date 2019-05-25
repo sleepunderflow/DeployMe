@@ -16,7 +16,6 @@ items = db.Table('items', metadata,
   db.Column('ownerApiKey', db.String(36), nullable=False),
   db.Column('accessApiKey', db.String(36), nullable=False),
   db.Column('secret', db.String(255), nullable=False),
-  db.Column('mainKey', db.String(255), nullable=False),
   db.Column('returnKey', db.String(255), nullable=False),
   db.Column('commandKey', db.String(255), nullable=False)
 )

@@ -22,7 +22,6 @@ def getItemKeys(id, item, keysData):
   keys = keysPackage(id)
   # keys.items.append(data)
   keys.itemKeys = keysData
-  keys.mainKey = item['mainKey']
   keys.returnKey = item['returnKey']
   keys.commandKey = item['commandKey']
   s = json.dumps( keys, default=lambda x: x.__dict__)
@@ -33,7 +32,6 @@ class keysPackage:
   def __init__(self, itemID):
     self.result = 'ok'
     self.itemID = itemID
-    self.mainKey = ''
     self.returnKey = ''
     self.commandKey = ''
     self.itemKeys = []

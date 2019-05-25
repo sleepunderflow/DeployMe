@@ -57,16 +57,15 @@ def getUser(apiKey):
 #   return (end)
 
 ''' Add an item to a database and return an itemID '''
-def addItem(itemID, ownerApiKey, accessApiKey, secret, mainKey, returnKey, commandKey):
+def addItem(itemID, ownerApiKey, accessApiKey, secret, returnKey, commandKey):
   global db, connection, items
   query = db.insert(items).values(itemID=itemID, ownerApiKey=ownerApiKey, accessApiKey=accessApiKey, \
-    secret=secret, mainKey=mainKey, returnKey=returnKey, commandKey=commandKey) 
+    secret=secret, returnKey=returnKey, commandKey=commandKey) 
   ResultProxy = connection.execute(query)
 
   query = db.select([items]).where(db.and_(items.columns.ownerApiKey == ownerApiKey,  \
     items.columns.accessApiKey==accessApiKey, items.columns.secret==secret,  \
-      items.columns.mainKey==mainKey, items.columns.returnKey==returnKey, \
-        items.columns.commandKey==commandKey))
+      items.columns.returnKey==returnKey, items.columns.commandKey==commandKey))
   ResultProxy = connection.execute(query)
   ResultSet = ResultProxy.fetchall()
   return ResultSet[0]['itemID']

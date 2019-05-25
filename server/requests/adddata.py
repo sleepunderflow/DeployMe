@@ -16,7 +16,6 @@ def registerNewObject(request, apikey):
   data = request.get_json(force=True)
   commands = data['commands']
   numberOfKeys = int(data['numberofkeys'])
-  mainKey = crypto.generateKeys(1, 256)[0]['key']
   returnKey = crypto.generateKeys(1, 256)[0]['key']
   commandKey = crypto.generateKeys(1, 256)[0]['key']
   ownerApiKey = apikey
@@ -31,7 +30,7 @@ def registerNewObject(request, apikey):
 
     available = database.checkIfAvailable(requestedItemID, accessApiKey)
 
-  itemID = database.addItem(requestedItemID, ownerApiKey, accessApiKey, secret, mainKey, returnKey, commandKey)
+  itemID = database.addItem(requestedItemID, ownerApiKey, accessApiKey, secret, returnKey, commandKey)
 
   # Check if the itemID retruned from the db is the same as requested
   if requestedItemID != itemID:
@@ -63,7 +62,7 @@ def registerNewObject(request, apikey):
 
   # return json
   return json.dumps( {"result":"ok", "itemID":itemID, "accessApiKey":accessApiKey, \
-    "secret":secret, "itemKeys":itemKeys, "returnKey": returnKey, "mainKey":mainKey}, \
+    "secret":secret, "itemKeys":itemKeys, "returnKey": returnKey}, \
        default=lambda x: x.__dict__)
 
 
