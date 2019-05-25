@@ -1,0 +1,12 @@
+\chapter{Server}
+\label{chapt-Server}
+This chapter specifies how the server works and how to communicate with it.
+
+\section{Database}
+Server uses sqlite database in file \texttt{DeployMe.db}. This database has 4 tables:
+\begin{itemize}
+  \item \textbf{users} - holds API keys that are allowed to create new items. API keys are randomly generated UUIDs. The key with ID==1 (one that is generated on running \texttt{createDb.py} is the only one authorized to create new users so be sure to save it)
+  \item \textbf{items} - holds itemID, access API key and secret that are required to get the information from the server. Holds also the API key of the owner, and some of the encryption keys. (accessApiKey can only be used to get this particular item from the server, it does not work as user api key)
+  \item \textbf{keys} - holds item encryption keys attached to the registered item
+  \item \textbf{commands} - holds encrypted commands and flags assigned to the registered item
+\end{itemize}
