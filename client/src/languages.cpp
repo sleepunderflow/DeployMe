@@ -1,4 +1,4 @@
-#include "languages.h"
+#include "../include/languages.h"
 
 translation getLanguage(std::string language) {
   if (language == "en_GB") {

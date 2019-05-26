@@ -1,7 +1,7 @@
-#include "config.h"
-#include "definitions/types.h"
-#include "languages.h"
-#include "errorHandling.h"
+#include "../include/config.h"
+#include "../include/definitions/types.h"
+#include "../include/languages.h"
+#include "../include/errorHandling.h"
 
 extern config configuration;
 

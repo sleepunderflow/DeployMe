@@ -1,18 +1,17 @@
 #include <iostream>
-#include "definitions/types.h"
-#include "definitions/constants.h"
-#include "config.h"
-#include "injectedValues.h"
-#include "errorHandling.h"
+#include "../include/definitions/types.h"
+#include "../include/definitions/constants.h"
+#include "../include/config.h"
+#include "../include/injectedValues.h"
+#include "../include/errorHandling.h"
 #include <string>
 #include <fstream>
 #include <vector>
 #include <string.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <cstdio>
 
-#include <openssl/evp.h>
+
 
 #ifdef _WIN32
   // Only on Windows
@@ -28,6 +27,8 @@
 
 #elif __linux__
   // Linux only
+  #include <openssl/evp.h>
+  #include <unistd.h>
   #include <linux/limits.h>  
   #include <sys/types.h>
 
@@ -56,6 +57,7 @@ void checkHash(char*, unsigned int, char*);
 
 // Platform specific variables and functions
 #ifdef _WIN64
+  #define PATH_MAX 260
   bool isConsoleApp = true;
   
   void getRidOfConsoleIfGUI();
@@ -318,22 +320,24 @@ void checkForPrivileges() {
 #endif 
 
 void checkHash(char* data, unsigned int length, char* expectedHash) {
-  unsigned char md_value[EVP_MAX_MD_SIZE];
-  unsigned int md_len;
-  const EVP_MD* md = EVP_sha256();
-  if (md == NULL)
-    showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-  EVP_MD_CTX *mdctx;
-  mdctx = EVP_MD_CTX_new();
-  EVP_DigestInit_ex(mdctx, md, NULL);
-  EVP_DigestUpdate(mdctx, data, length);
-  EVP_DigestFinal_ex(mdctx, md_value, &md_len);
-  EVP_MD_CTX_free(mdctx);
+  #ifdef __linux__
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+	unsigned int md_len;
+	const EVP_MD* md = EVP_sha256();
+	if (md == NULL)
+		showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+	EVP_MD_CTX *mdctx;
+	mdctx = EVP_MD_CTX_new();
+	EVP_DigestInit_ex(mdctx, md, NULL);
+	EVP_DigestUpdate(mdctx, data, length);
+	EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+	EVP_MD_CTX_free(mdctx);
 
-  char hexdigest[65] = {0};
-  for (unsigned int i = 0; i < md_len; i++)
-    sprintf(hexdigest+i*2, "%02x", md_value[i]);
+	char hexdigest[65] = {0};
+	for (unsigned int i = 0; i < md_len; i++)
+	    sprintf(hexdigest+i*2, "%02x", md_value[i]);
   
-  if (strncmp(hexdigest, expectedHash, 64) != 0)
-    showErrorAndExit(configuration.texts.itemHashDoesntMatch, ERR_ITEMHASHDONTMATCH);
+	 if (strncmp(hexdigest, expectedHash, 64) != 0)
+		showErrorAndExit(configuration.texts.itemHashDoesntMatch, ERR_ITEMHASHDONTMATCH);
+  #endif
 }
