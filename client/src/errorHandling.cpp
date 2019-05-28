@@ -1,4 +1,7 @@
-#include "errorHandling.h"
+#include "../include/errorHandling.h"
+
+// TEMPORARY TODO:
+extern bool isConsoleApp;
 
 void showErrorAndExit(std::string message, int exitCode) {
   showError(message);
@@ -9,7 +12,7 @@ void showError(std::string message) {
   #ifdef _WIN64
     // If it's windows and GUI application then show message box, otherwise do what linux does
     if (!isConsoleApp)
-      MessageBox(NULL,message.c_str(),configuration.texts.error,MB_OK|MB_ICONERROR);
+      MessageBox(NULL,message.c_str(),(LPCSTR)configuration.texts.error.c_str(),MB_OK|MB_ICONERROR);
     else
   #endif
   {

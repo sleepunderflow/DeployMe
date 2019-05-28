@@ -1,18 +1,17 @@
 #include <iostream>
-#include "definitions/types.h"
-#include "definitions/constants.h"
-#include "config.h"
-#include "injectedValues.h"
-#include "errorHandling.h"
+#include "../include/definitions/types.h"
+#include "../include/definitions/constants.h"
+#include "../include/config.h"
+#include "../include/injectedValues.h"
+#include "../include/errorHandling.h"
 #include <string>
 #include <fstream>
 #include <vector>
 #include <string.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <cstdio>
 
-#include <openssl/evp.h>
+
 
 #ifdef _WIN32
   // Only on Windows
@@ -21,6 +20,7 @@
     #include <Windows.h>
     #include <shellapi.h>
     #include <Shlobj.h>
+    #include <bcrypt.h>
   
   #else
     #error 32-bit targets not supported
@@ -28,6 +28,8 @@
 
 #elif __linux__
   // Linux only
+  #include <openssl/evp.h>
+  #include <unistd.h>
   #include <linux/limits.h>  
   #include <sys/types.h>
 
@@ -56,9 +58,21 @@ void checkHash(char*, unsigned int, char*);
 
 // Platform specific variables and functions
 #ifdef _WIN64
+  #define PATH_MAX 260
+
+  // Magic from Microsoft docs for hashing
+  #define NT_SUCCESS(Status)          (((NTSTATUS)(Status)) >= 0)
+  #define STATUS_UNSUCCESSFUL         ((NTSTATUS)0xC0000001L)
+
   bool isConsoleApp = true;
   
   void getRidOfConsoleIfGUI();
+  void freeHashResources(
+    BCRYPT_ALG_HANDLE hAlg,
+    BCRYPT_HASH_HANDLE hHash,
+    PBYTE pbHashObject,
+    PBYTE pbHash
+  )
 #endif
 
 
@@ -315,25 +329,154 @@ void checkForPrivileges() {
       FreeConsole();
     }
   }
+
+  void freeHashResources(
+    BCRYPT_ALG_HANDLE hAlg,
+    BCRYPT_HASH_HANDLE hHash,
+    PBYTE pbHashObject,
+    PBYTE pbHash
+  ) {
+    if (hAlg) 
+      BCryptCloseAlgorithmProvider(hAlg,0);
+    if (hHash)
+      BCryptDestroyHash(hHash);
+    if (pbHashObject) 
+      HeapFree(GetProcessHeap(), 0, pbHashObject);
+    if (pbHash) 
+      HeapFree(GetProcessHeap(), 0, pbHash);
+  }
 #endif 
 
 void checkHash(char* data, unsigned int length, char* expectedHash) {
-  unsigned char md_value[EVP_MAX_MD_SIZE];
-  unsigned int md_len;
-  const EVP_MD* md = EVP_sha256();
-  if (md == NULL)
-    showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-  EVP_MD_CTX *mdctx;
-  mdctx = EVP_MD_CTX_new();
-  EVP_DigestInit_ex(mdctx, md, NULL);
-  EVP_DigestUpdate(mdctx, data, length);
-  EVP_DigestFinal_ex(mdctx, md_value, &md_len);
-  EVP_MD_CTX_free(mdctx);
+  #ifdef _WIN64
+    BCRYPT_ALG_HANDLE hAlg = NULL;
+    BCRYPT_HASH_HANDLE hHash = NULL;
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+    DWORD cbData = 0,
+          cbHash = 0,
+          cbHashObject = 0;
+    PBYTE pbHashObject = NULL;
+    PBYTE pbHash = NULL;
 
-  char hexdigest[65] = {0};
-  for (unsigned int i = 0; i < md_len; i++)
-    sprintf(hexdigest+i*2, "%02x", md_value[i]);
-  
-  if (strncmp(hexdigest, expectedHash, 64) != 0)
-    showErrorAndExit(configuration.texts.itemHashDoesntMatch, ERR_ITEMHASHDONTMATCH);
+    // open sha256 provider
+    NTSTATUS result = BCryptOpenAlgorithmProvider(
+      &hAlg,
+      BCRYPT_SHA256_ALGORITHM,
+      NULL,
+      0
+    );
+    if (!NT_SUCCESS(result))
+      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+
+    // Get hash object size
+    result = BCryptGetProperty(
+      hAlg, 
+      BCRYPT_OBJECT_LENGTH, 
+      (PBYTE)&cbHashObject, 
+      sizeof(DWORD), 
+      &cbData, 
+      0
+    );
+    if (!NT_SUCCESS(result)) {
+      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
+      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+    }
+
+    // Allocate memory for hash object
+    pbHashObject = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbHashObject); 
+    if (pbHashObject == NULL) {
+      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
+      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+    }
+
+    // Get the hash length
+    result = BCryptGetProperty(
+      hAlg, 
+      BCRYPT_HASH_LENGTH, 
+      (PBYTE)&cbHash, 
+      sizeof(DWORD), 
+      &cbData, 
+      0
+    );
+    if (!NT_SUCCESS(result)) {
+      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
+      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+    }
+
+    // Allocate memory for hash buffer
+    pbHash = (PBYTE)HeapAlloc (GetProcessHeap (), 0, cbHash);
+    if (pbHashObject == NULL) {
+      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
+      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+    }
+
+    // Create hash
+    result = BCryptCreateHash(
+      hAlg, 
+      &hHash, 
+      pbHashObject, 
+      cbHashObject, 
+      NULL, 
+      0, 
+      0
+    );
+    if (!NT_SUCCESS(result)) {
+      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
+      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+    }
+
+    // Hash data, finally
+    result = BCryptHashData(
+      hHash,
+      (PBYTE)data,
+      length, // sizeof(length),
+      0
+    );
+    if (!NT_SUCCESS(result)) {
+      freeHashResources(hAlg, hHash, pbHashObject, pbHash);      
+      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+    }
+
+    result = BCryptFinishHash(
+      hHash, 
+      pbHash, 
+      cbHash, 
+      0
+    );
+    if (!NT_SUCCESS(result)) {
+      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
+      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+    }
+
+    char hexdigest[65] = {0};
+	  for (unsigned int i = 0; i < cbHash; i++)
+	      sprintf(hexdigest+i*2, "%02x", pbHash[i]);
+
+    std::cout << "HASH: " << hexdigest << std::endl;
+
+    freeHashResources(hAlg, hHash, pbHashObject, pbHash);
+
+    if (strncmp(hexdigest, expectedHash, 64) != 0)
+	  	showErrorAndExit(configuration.texts.itemHashDoesntMatch, ERR_ITEMHASHDONTMATCH);
+
+  #elif __linux__
+	  unsigned char md_value[EVP_MAX_MD_SIZE];
+	  unsigned int md_len;
+	  const EVP_MD* md = EVP_sha256();
+	  if (md == NULL)
+	  	showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
+	  EVP_MD_CTX *mdctx;
+	  mdctx = EVP_MD_CTX_new();
+	  EVP_DigestInit_ex(mdctx, md, NULL);
+	  EVP_DigestUpdate(mdctx, data, length);
+	  EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+	  EVP_MD_CTX_free(mdctx);
+
+	  char hexdigest[65] = {0};
+	  for (unsigned int i = 0; i < md_len; i++)
+	      sprintf(hexdigest+i*2, "%02x", md_value[i]);
+
+	  if (strncmp(hexdigest, expectedHash, 64) != 0)
+	  	showErrorAndExit(configuration.texts.itemHashDoesntMatch, ERR_ITEMHASHDONTMATCH);
+  #endif
 }

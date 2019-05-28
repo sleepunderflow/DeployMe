@@ -4,6 +4,8 @@ injector/.~injector*
 
 .vscode
 .vscode/settings.json
+.vs
+x64
 
 ## python
 
