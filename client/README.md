@@ -13,3 +13,5 @@ If generated client binary when run on different machine shows that it requires 
 - Recompile
 
 (process like in [This post](https://gamedev.stackexchange.com/questions/138259/how-can-i-get-rid-of-missing-dll-problems) just different option selected)
+
+If during compilation you get error 'Unresolved external symbol BCrypt...' go to solution properties like above and Linker -> Input. There change Additional Dependencies to `Bcrypt.lib;%(AdditionalDependencies)`
