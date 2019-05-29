@@ -9,23 +9,26 @@ void showErrorAndExit(std::string message, int exitCode) {
 }
 
 void showError(std::string message) {
-  #ifdef _WIN64
-    // If it's windows and GUI application then show message box, otherwise do what linux does
-    if (!isConsoleApp)
-      MessageBox(NULL,message.c_str(),(LPCSTR)configuration.texts.error.c_str(),MB_OK|MB_ICONERROR);
-    else
-  #endif
+#ifdef _WIN64
+  // If it's windows and GUI application then show message box, otherwise do
+  // what linux does
+  if (!isConsoleApp)
+    MessageBox(NULL, message.c_str(), (LPCSTR)configuration.texts.error.c_str(),
+               MB_OK | MB_ICONERROR);
+  else
+#endif
   {
-    std::cerr << message << std::endl; 
+    std::cerr << message << std::endl;
   }
 }
 
-void checkIfReadSuccessful(std::istream& file) {
+void checkIfReadSuccessful(std::istream &file) {
   if (file.fail()) {
     if (file.eof())
       showErrorAndExit(configuration.texts.runOutOfData, ERR_NOTENOUGHDATA);
-    else 
-      showErrorAndExit(configuration.texts.unknownErrorFileProcessing, ERR_UNKOWNFILEERROR);
+    else
+      showErrorAndExit(configuration.texts.unknownErrorFileProcessing,
+                       ERR_UNKOWNFILEERROR);
   }
 }
 

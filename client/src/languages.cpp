@@ -19,11 +19,13 @@ translation getLangEN_GB() {
   texts.header = "Header";
   texts.flags = "Flags";
   texts.offsetOfInjectedData = "Offset of injected data";
-  texts.incorrectNumberOfArguments = "Incorrect number of arguments to the program";
+  texts.incorrectNumberOfArguments =
+      "Incorrect number of arguments to the program";
   texts.requiresAParameter = "option requires a parameter";
   texts.unknownParameter = "Unknown parameter ";
   texts.runOutOfData = "Run out of data before finished processing";
-  texts.unknownErrorFileProcessing = "Unknown error while reading the source file";
+  texts.unknownErrorFileProcessing =
+      "Unknown error while reading the source file";
   texts.error = "ERROR";
   texts.payloadLength = "payload length";
   texts.headerLength = "header length";
@@ -39,12 +41,15 @@ translation getLangEN_GB() {
 }
 
 translation getLangPL_PL() {
-  // Use en_GB as base so that if something is not translated it'll be displayed in english
+  // Use en_GB as base so that if something is not translated it'll be displayed
+  // in english
   translation texts = getLangEN_GB();
   texts.hello = "Witam!";
-  texts.cantAllocateMemoryMetadata = "Nie można zaalokować pamięci dla metadanych obiektu";
+  texts.cantAllocateMemoryMetadata =
+      "Nie można zaalokować pamięci dla metadanych obiektu";
   texts.somethingWentWrong = "Coś poszło nie tak";
-  texts.thisProgramMustBeRunAsRoot = "Ten program musi być uruchomiony jako root!";
+  texts.thisProgramMustBeRunAsRoot =
+      "Ten program musi być uruchomiony jako root!";
   texts.header = "Nagłówek";
   texts.flags = "Flagi";
   texts.offsetOfInjectedData = "Lokalizacja wstrzykniętych danych w pliku";
@@ -52,7 +57,8 @@ translation getLangPL_PL() {
   texts.requiresAParameter = "wymaga dodatkowego parametru";
   texts.unknownParameter = "Nieznany parametr ";
   texts.runOutOfData = "Skończyły się dane przed końcem przetwarzania";
-  texts.unknownErrorFileProcessing = "Nieznany błąd podczas czytania pliku źródłowego";
+  texts.unknownErrorFileProcessing =
+      "Nieznany błąd podczas czytania pliku źródłowego";
   texts.error = "BŁĄD";
   texts.payloadLength = "Długość danych";
   texts.headerLength = "Długość nagłówka";
@@ -60,7 +66,8 @@ translation getLangPL_PL() {
   texts.itemHash = "Hash obiektu";
   texts.additionalMetadata = "Dodatkowe metadane";
   texts.cantCreateHashFunction = "Nie można utworzyć funkcji hashującej";
-  texts.cantGetConsoleScreenBuffer = "Nie można uzyskać informacji o buforze konsoli";
+  texts.cantGetConsoleScreenBuffer =
+      "Nie można uzyskać informacji o buforze konsoli";
   texts.itemHashDoesntMatch = "Hash dodanego obiektu się nie zgadza";
 
   return texts;

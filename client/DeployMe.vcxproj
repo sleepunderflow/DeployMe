@@ -52,6 +52,7 @@
     <ClCompile Include="src\config.cpp" />
     <ClCompile Include="src\errorHandling.cpp" />
     <ClCompile Include="src\languages.cpp" />
+    <ClCompile Include="src\windows\crypto.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\config.h" />

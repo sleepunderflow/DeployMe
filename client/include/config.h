@@ -1,8 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <string>
 #include "definitions/types.h"
+#include <string>
+
 
 typedef struct {
   bool debugMode;
@@ -13,6 +14,6 @@ typedef struct {
 void extractConfig(int argc, char **argv);
 void setDefaultConfig();
 void processConfigurations();
-void showUsage(char*);
+void showUsage(char *);
 
-#endif //CONFIG_H
+#endif // CONFIG_H
