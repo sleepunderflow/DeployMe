@@ -1,10 +1,11 @@
 CC := g++ # This is the main compiler
 SRCDIR := src
 BUILDDIR := build
-TARGET := bin/client
+TARGET := bin/client.out
  
 SRCEXT := cpp
-SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+# ignore files in windows subdirectories
+SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT) | grep -v "/windows/")
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall -std=c++14
 LIB := -lssl -lcrypto # -pthread -lmongoclient -L lib -lboost_thread-mt -lboost_filesystem-mt -lboost_system-mt
@@ -17,6 +18,7 @@ $(TARGET): $(OBJECTS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
+	@mkdir -p $(BUILDDIR)/linux
 	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"; $(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 clean:

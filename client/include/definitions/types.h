@@ -1,8 +1,9 @@
 #pragma once
 #ifndef TYPES_H
 #define TYPES_H
-#include <string>
 #include <iostream>
+#include <string>
+
 
 typedef struct {
   uint32_t totalSize;
@@ -17,17 +18,16 @@ typedef struct {
   uint32_t flags;
   char fileName[64];
   char itemHash[64];
-  char* additionalData;
+  char *additionalData;
 } individualHeader;
 
 typedef struct {
   std::string permission;
 } metadata;
 
-#endif //TYPES_H
+#endif // TYPES_H
 
-
-typedef struct{
+typedef struct {
   std::string hello;
   std::string cantAllocateMemoryMetadata;
   std::string somethingWentWrong;

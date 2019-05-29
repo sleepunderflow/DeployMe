@@ -1,41 +1,39 @@
-#include <iostream>
-#include "../include/definitions/types.h"
-#include "../include/definitions/constants.h"
 #include "../include/config.h"
-#include "../include/injectedValues.h"
+#include "../include/crypto.h"
+#include "../include/definitions/constants.h"
+#include "../include/definitions/types.h"
 #include "../include/errorHandling.h"
-#include <string>
-#include <fstream>
-#include <vector>
-#include <string.h>
-#include <stdlib.h>
+#include "../include/injectedValues.h"
 #include <cstdio>
-
-
+#include <fstream>
+#include <iostream>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <vector>
 
 #ifdef _WIN32
-  // Only on Windows
-  #ifdef _WIN64
-    // 64-bit
-    #include <Windows.h>
-    #include <shellapi.h>
-    #include <Shlobj.h>
-    #include <bcrypt.h>
-  
-  #else
-    #error 32-bit targets not supported
-  #endif
-
-#elif __linux__
-  // Linux only
-  #include <openssl/evp.h>
-  #include <unistd.h>
-  #include <linux/limits.h>  
-  #include <sys/types.h>
+// Only on Windows
+#ifdef _WIN64
+// 64-bit
+#include <Shlobj.h>
+#include <Windows.h>
+#include <shellapi.h>
 
 #else
-  // All the other targets (sorry BSD)
-  #error Unsupported platform
+#error 32-bit targets not supported
+#endif
+
+#elif __linux__
+// Linux only
+#include <linux/limits.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+
+#else
+// All the other targets (sorry BSD)
+#error Unsupported platform
 #endif
 
 // Variable declarations
@@ -53,39 +51,29 @@ void checkForPrivileges();
 std::string getExePath();
 void showErrorAndExit(std::string, int);
 void showError(std::string);
-void checkIfReadSuccessful(std::istream&);
-void checkHash(char*, unsigned int, char*);
+void checkIfReadSuccessful(std::istream &);
 
 // Platform specific variables and functions
 #ifdef _WIN64
-  #define PATH_MAX 260
+#define PATH_MAX 260
 
-  // Magic from Microsoft docs for hashing
-  #define NT_SUCCESS(Status)          (((NTSTATUS)(Status)) >= 0)
-  #define STATUS_UNSUCCESSFUL         ((NTSTATUS)0xC0000001L)
+bool isConsoleApp = true;
 
-  bool isConsoleApp = true;
-  
-  void getRidOfConsoleIfGUI();
-  void freeHashResources(
-    BCRYPT_ALG_HANDLE hAlg,
-    BCRYPT_HASH_HANDLE hHash,
-    PBYTE pbHashObject,
-    PBYTE pbHash
-  )
+void getRidOfConsoleIfGUI();
+
 #endif
 
+int main(int argc, char **argv) {
+#ifdef _WIN64
+  // If it's windows and we're running as graphical app (double click) get rid
+  // of the terminal window
+  getRidOfConsoleIfGUI();
+#endif
 
-int main(int argc, char** argv) {
-  #ifdef _WIN64
-    // If it's windows and we're running as graphical app (double click) get rid of the terminal window
-    getRidOfConsoleIfGUI();
-  #endif
-  
   setDefaultConfig();
-  
+
   // If any arguments were provided, extract them
-  if (argc > 1) 
+  if (argc > 1)
     extractConfig(argc, argv);
 
   processConfigurations();
@@ -97,17 +85,19 @@ int main(int argc, char** argv) {
 
   if (configuration.debugMode) {
     // Display information about injected values
-    std::cout << std::hex << configuration.texts.header << ": " << injectedValues.header 
-      << "\n" << configuration.texts.flags << ": " << injectedValues.flags 
-      << "\n" << configuration.texts.offsetOfInjectedData << ": " << injectedValues.injectedDataOffset 
-      << std::endl;
+    std::cout << std::hex << configuration.texts.header << ": "
+              << injectedValues.header << "\n"
+              << configuration.texts.flags << ": " << injectedValues.flags
+              << "\n"
+              << configuration.texts.offsetOfInjectedData << ": "
+              << injectedValues.injectedDataOffset << std::endl;
   }
 
   // If the flag says that there exist embedded data, unpack them
   if (injectedValues.flags && FLAG_EMBEDPRESENT)
     readEmbeddedToolInformation(injectedValues.injectedDataOffset);
 
-  for (auto& header: embeddedItems) {
+  for (auto &header : embeddedItems) {
     printIndividualHeader(header);
   }
   for (unsigned int i = 0; i < embeddedItems.size(); i++) {
@@ -118,12 +108,12 @@ int main(int argc, char** argv) {
 }
 
 /*
-* Arguments: 
-* - uint64_t offset - offset at which the embedded files start
-*
-* This function tries to read the main header for embedded items and 
-*   calls functions filling structures for each of the embedded files
-*/
+ * Arguments:
+ * - uint64_t offset - offset at which the embedded files start
+ *
+ * This function tries to read the main header for embedded items and
+ *   calls functions filling structures for each of the embedded files
+ */
 void readEmbeddedToolInformation(uint64_t offset) {
   embeddedToolsMainHeader header;
   std::ifstream client;
@@ -135,14 +125,14 @@ void readEmbeddedToolInformation(uint64_t offset) {
   client.read((char *)&header, sizeof(embeddedToolsMainHeader));
   checkIfReadSuccessful(client);
 
-  // Unpack the hash (probably is not NULL-terminated so can't just use it as a string directly)
+  // Unpack the hash (probably is not NULL-terminated so can't just use it as a
+  // string directly)
   strncpy(contentHash, header.contentHash, 64);
 
   if (configuration.debugMode) {
-    std::cout << std::dec << "totalSize: " << header.totalSize 
-      << ", numberOfItems: " << header.numberOfItems
-      << ", contentHash: " << contentHash 
-      << std::endl; 
+    std::cout << std::dec << "totalSize: " << header.totalSize
+              << ", numberOfItems: " << header.numberOfItems
+              << ", contentHash: " << contentHash << std::endl;
   }
 
   // Process every injected item up to the specified number of items
@@ -153,14 +143,13 @@ void readEmbeddedToolInformation(uint64_t offset) {
   client.close();
 }
 
-
 /*
  * Arguments:
  * - std::ifstream &client - opened file object from which to read
  *   the item information - variable state will be modified
  *
  * This function reads the embedded item information from the file
- *   pushes the obtained header to the global vector object 
+ *   pushes the obtained header to the global vector object
  *   and advances the file state to right after the current embedded item
  *
  * Modified global objects:
@@ -170,16 +159,18 @@ void readEmbeddedToolInformation(uint64_t offset) {
 void readEmbeddedItem(std::ifstream &client) {
   individualHeader header;
   // Read the header without extra data
-  client.read((char*)&header, sizeof(individualHeader)-sizeof(header.additionalData));
+  client.read((char *)&header,
+              sizeof(individualHeader) - sizeof(header.additionalData));
   checkIfReadSuccessful(client);
 
-  int metadataSize = header.headerLength-144;
+  int metadataSize = header.headerLength - 144;
 
-  header.additionalData = (char*)malloc(metadataSize + 1);
+  header.additionalData = (char *)malloc(metadataSize + 1);
   if (header.additionalData == nullptr) {
-    showErrorAndExit(configuration.texts.cantAllocateMemoryMetadata, ERR_MALLOCERROR);
+    showErrorAndExit(configuration.texts.cantAllocateMemoryMetadata,
+                     ERR_MALLOCERROR);
   }
-  
+
   header.additionalData[metadataSize] = 0;
   client.read(header.additionalData, metadataSize);
 
@@ -194,15 +185,15 @@ void readEmbeddedItem(std::ifstream &client) {
 
 /*
  * Arguments:
- * - individualHeader header - individualHeader object that was read 
+ * - individualHeader header - individualHeader object that was read
  *   from the source file
  *
- * This function displays information that was read from the source file 
+ * This function displays information that was read from the source file
  *   as a header of embedded file
  */
 void printIndividualHeader(individualHeader header) {
-  /* Values are unlikely to be null-terminated so each of them has to 
-  *  be individually copied over to a char array and null terminated */
+  /* Values are unlikely to be null-terminated so each of them has to
+   *  be individually copied over to a char array and null terminated */
   char itemHash[65] = {0};
   char fileName[65] = {0};
 
@@ -210,23 +201,25 @@ void printIndividualHeader(individualHeader header) {
   strncpy(fileName, header.fileName, 64);
 
   if (configuration.debugMode) {
-    std::cout << std::dec << "Id: " << header.ID 
-      << ", " << configuration.texts.payloadLength << ": " << header.payloadLength 
-      << ", " << configuration.texts.headerLength << ": " << header.headerLength 
-      << ", " << configuration.texts.flags << ": " << header.flags 
-      << ", " << configuration.texts.fileName << ": " << fileName 
-      << ", " << configuration.texts.itemHash << ": " << itemHash 
-      << ", " << configuration.texts.additionalMetadata << ": " << header.additionalData 
-      << std::endl;
+    std::cout << std::dec << "Id: " << header.ID << ", "
+              << configuration.texts.payloadLength << ": "
+              << header.payloadLength << ", "
+              << configuration.texts.headerLength << ": " << header.headerLength
+              << ", " << configuration.texts.flags << ": " << header.flags
+              << ", " << configuration.texts.fileName << ": " << fileName
+              << ", " << configuration.texts.itemHash << ": " << itemHash
+              << ", " << configuration.texts.additionalMetadata << ": "
+              << header.additionalData << std::endl;
   }
 }
 
 /*
- * Arguments: 
+ * Arguments:
  * - unsigned int id: ID of an item to be unpacked
- * 
- * This function takes a numerical ID of an embedded item, goes to the corresponding 
- * offset in the executable and extracts the file to the requested file name
+ *
+ * This function takes a numerical ID of an embedded item, goes to the
+ * corresponding offset in the executable and extracts the file to the requested
+ * file name
  */
 void extractItem(unsigned int id) {
   std::ifstream client;
@@ -235,7 +228,7 @@ void extractItem(unsigned int id) {
   individualHeader header = embeddedItems[id];
   std::streampos offset = embeddedItemsOffsets[id];
   client.seekg(offset);
-  char* buffer = (char*) malloc(header.payloadLength);
+  char *buffer = (char *)malloc(header.payloadLength);
   client.read(buffer, header.payloadLength);
   checkIfReadSuccessful(client);
 
@@ -254,32 +247,34 @@ void extractItem(unsigned int id) {
 }
 
 std::string getExePath() {
-  char result[ PATH_MAX ];
-  #ifdef __linux__
-    ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
-  #elif _WIN64
-    int count = GetModuleFileNameA(nullptr, result, PATH_MAX);
-  #endif
-  return std::string( result, (count > 0) ? count : 0 );
+  char result[PATH_MAX];
+#ifdef __linux__
+  ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+#elif _WIN64
+  int count = GetModuleFileNameA(nullptr, result, PATH_MAX);
+#endif
+  return std::string(result, (count > 0) ? count : 0);
 }
 
 #ifdef _WIN64
-  // FROM https://stackoverflow.com/questions/8046097/how-to-check-if-a-process-has-the-administrative-rights
-  BOOL IsElevated( ) {
-    BOOL fRet = FALSE;
-    HANDLE hToken = NULL;
-    if( OpenProcessToken( GetCurrentProcess( ),TOKEN_QUERY,&hToken ) ) {
-        TOKEN_ELEVATION Elevation;
-        DWORD cbSize = sizeof( TOKEN_ELEVATION );
-        if( GetTokenInformation( hToken, TokenElevation, &Elevation, sizeof( Elevation ), &cbSize ) ) {
-            fRet = Elevation.TokenIsElevated;
-        }
+// FROM
+// https://stackoverflow.com/questions/8046097/how-to-check-if-a-process-has-the-administrative-rights
+BOOL IsElevated() {
+  BOOL fRet = FALSE;
+  HANDLE hToken = NULL;
+  if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
+    TOKEN_ELEVATION Elevation;
+    DWORD cbSize = sizeof(TOKEN_ELEVATION);
+    if (GetTokenInformation(hToken, TokenElevation, &Elevation,
+                            sizeof(Elevation), &cbSize)) {
+      fRet = Elevation.TokenIsElevated;
     }
-    if( hToken ) {
-        CloseHandle( hToken );
-    }
-    return fRet;
   }
+  if (hToken) {
+    CloseHandle(hToken);
+  }
+  return fRet;
+}
 #endif
 
 void checkForPrivileges() {
@@ -287,196 +282,49 @@ void checkForPrivileges() {
   if (!(injectedValues.flags & FLAG_ELEVATE))
     return;
 
-  #ifdef __linux__
-    // If not being run as root then exit
-    if (getuid() != 0) 
-      showErrorAndExit(configuration.texts.thisProgramMustBeRunAsRoot, ERR_UNSUFFICIENTPRIVILEGES);
-  #elif _WIN64
-    bool isAdmin = IsElevated();
-    if (!isAdmin) {
-      // Launch itself as administrator. 
-      wchar_t szPath[MAX_PATH]; 
-      if (!GetModuleFileName(NULL, (LPSTR)szPath, ARRAYSIZE(szPath)))
-        showErrorAndExit(configuration.texts.somethingWentWrong, ERR_WINAPIERROR);
+#ifdef __linux__
+  // If not being run as root then exit
+  if (getuid() != 0)
+    showErrorAndExit(configuration.texts.thisProgramMustBeRunAsRoot,
+                     ERR_UNSUFFICIENTPRIVILEGES);
+#elif _WIN64
+  bool isAdmin = IsElevated();
+  if (!isAdmin) {
+    // Launch itself as administrator.
+    wchar_t szPath[MAX_PATH];
+    if (!GetModuleFileName(NULL, (LPSTR)szPath, ARRAYSIZE(szPath)))
+      showErrorAndExit(configuration.texts.somethingWentWrong, ERR_WINAPIERROR);
 
-      SHELLEXECUTEINFO sei = { sizeof(sei) }; 
-      sei.lpVerb = (LPCSTR)"runas"; 
-      sei.lpFile = (LPCSTR)szPath; 
-      sei.lpParameters = (LPCSTR)("-l " + configuration.lang).c_str();
-      sei.hwnd = GetActiveWindow(); 
-      sei.nShow = SW_NORMAL | SEE_MASK_NOASYNC | SW_RESTORE  | SW_SHOW ; 
+    SHELLEXECUTEINFO sei = {sizeof(sei)};
+    sei.lpVerb = (LPCSTR) "runas";
+    sei.lpFile = (LPCSTR)szPath;
+    sei.lpParameters = (LPCSTR)("-l " + configuration.lang).c_str();
+    sei.hwnd = GetActiveWindow();
+    sei.nShow = SW_NORMAL | SEE_MASK_NOASYNC | SW_RESTORE | SW_SHOW;
 
-      if (!ShellExecuteEx(&sei)) 
-        showErrorAndExit(configuration.texts.thisProgramMustBeRunAsRoot, ERR_UNSUFFICIENTPRIVILEGES);
-      else 
-        // The child is going to take over now
-        exit(0);
-    }
-  #endif
+    if (!ShellExecuteEx(&sei))
+      showErrorAndExit(configuration.texts.thisProgramMustBeRunAsRoot,
+                       ERR_UNSUFFICIENTPRIVILEGES);
+    else
+      // The child is going to take over now
+      exit(0);
+  }
+#endif
 }
 
 #ifdef _WIN64
-  void getRidOfConsoleIfGUI() {
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    // Get handle to the console info
-    HANDLE hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (!GetConsoleScreenBufferInfo(hStdOutput, &csbi))
-      showError(configuration.texts.cantGetConsoleScreenBuffer);
-    // if cursor position is (0,0) then we are running as GUI
-    if ((!csbi.dwCursorPosition.X) && (!csbi.dwCursorPosition.Y)) {
-      // In that case just get rid of the console window and set the flag
-      isConsoleApp = false;
-      FreeConsole();
-    }
+void getRidOfConsoleIfGUI() {
+  CONSOLE_SCREEN_BUFFER_INFO csbi;
+  // Get handle to the console info
+  HANDLE hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (!GetConsoleScreenBufferInfo(hStdOutput, &csbi))
+    showError(configuration.texts.cantGetConsoleScreenBuffer);
+  // if cursor position is (0,0) then we are running as GUI
+  if ((!csbi.dwCursorPosition.X) && (!csbi.dwCursorPosition.Y)) {
+    // In that case just get rid of the console window and set the flag
+    isConsoleApp = false;
+    FreeConsole();
   }
-
-  void freeHashResources(
-    BCRYPT_ALG_HANDLE hAlg,
-    BCRYPT_HASH_HANDLE hHash,
-    PBYTE pbHashObject,
-    PBYTE pbHash
-  ) {
-    if (hAlg) 
-      BCryptCloseAlgorithmProvider(hAlg,0);
-    if (hHash)
-      BCryptDestroyHash(hHash);
-    if (pbHashObject) 
-      HeapFree(GetProcessHeap(), 0, pbHashObject);
-    if (pbHash) 
-      HeapFree(GetProcessHeap(), 0, pbHash);
-  }
-#endif 
-
-void checkHash(char* data, unsigned int length, char* expectedHash) {
-  #ifdef _WIN64
-    BCRYPT_ALG_HANDLE hAlg = NULL;
-    BCRYPT_HASH_HANDLE hHash = NULL;
-    NTSTATUS status = STATUS_UNSUCCESSFUL;
-    DWORD cbData = 0,
-          cbHash = 0,
-          cbHashObject = 0;
-    PBYTE pbHashObject = NULL;
-    PBYTE pbHash = NULL;
-
-    // open sha256 provider
-    NTSTATUS result = BCryptOpenAlgorithmProvider(
-      &hAlg,
-      BCRYPT_SHA256_ALGORITHM,
-      NULL,
-      0
-    );
-    if (!NT_SUCCESS(result))
-      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-
-    // Get hash object size
-    result = BCryptGetProperty(
-      hAlg, 
-      BCRYPT_OBJECT_LENGTH, 
-      (PBYTE)&cbHashObject, 
-      sizeof(DWORD), 
-      &cbData, 
-      0
-    );
-    if (!NT_SUCCESS(result)) {
-      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
-      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-    }
-
-    // Allocate memory for hash object
-    pbHashObject = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbHashObject); 
-    if (pbHashObject == NULL) {
-      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
-      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-    }
-
-    // Get the hash length
-    result = BCryptGetProperty(
-      hAlg, 
-      BCRYPT_HASH_LENGTH, 
-      (PBYTE)&cbHash, 
-      sizeof(DWORD), 
-      &cbData, 
-      0
-    );
-    if (!NT_SUCCESS(result)) {
-      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
-      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-    }
-
-    // Allocate memory for hash buffer
-    pbHash = (PBYTE)HeapAlloc (GetProcessHeap (), 0, cbHash);
-    if (pbHashObject == NULL) {
-      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
-      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-    }
-
-    // Create hash
-    result = BCryptCreateHash(
-      hAlg, 
-      &hHash, 
-      pbHashObject, 
-      cbHashObject, 
-      NULL, 
-      0, 
-      0
-    );
-    if (!NT_SUCCESS(result)) {
-      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
-      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-    }
-
-    // Hash data, finally
-    result = BCryptHashData(
-      hHash,
-      (PBYTE)data,
-      length, // sizeof(length),
-      0
-    );
-    if (!NT_SUCCESS(result)) {
-      freeHashResources(hAlg, hHash, pbHashObject, pbHash);      
-      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-    }
-
-    result = BCryptFinishHash(
-      hHash, 
-      pbHash, 
-      cbHash, 
-      0
-    );
-    if (!NT_SUCCESS(result)) {
-      freeHashResources(hAlg, hHash, pbHashObject, pbHash);
-      showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-    }
-
-    char hexdigest[65] = {0};
-	  for (unsigned int i = 0; i < cbHash; i++)
-	      sprintf(hexdigest+i*2, "%02x", pbHash[i]);
-
-    std::cout << "HASH: " << hexdigest << std::endl;
-
-    freeHashResources(hAlg, hHash, pbHashObject, pbHash);
-
-    if (strncmp(hexdigest, expectedHash, 64) != 0)
-	  	showErrorAndExit(configuration.texts.itemHashDoesntMatch, ERR_ITEMHASHDONTMATCH);
-
-  #elif __linux__
-	  unsigned char md_value[EVP_MAX_MD_SIZE];
-	  unsigned int md_len;
-	  const EVP_MD* md = EVP_sha256();
-	  if (md == NULL)
-	  	showErrorAndExit(configuration.texts.cantCreateHashFunction, ERR_INTERNALHASHERPROBLEM);
-	  EVP_MD_CTX *mdctx;
-	  mdctx = EVP_MD_CTX_new();
-	  EVP_DigestInit_ex(mdctx, md, NULL);
-	  EVP_DigestUpdate(mdctx, data, length);
-	  EVP_DigestFinal_ex(mdctx, md_value, &md_len);
-	  EVP_MD_CTX_free(mdctx);
-
-	  char hexdigest[65] = {0};
-	  for (unsigned int i = 0; i < md_len; i++)
-	      sprintf(hexdigest+i*2, "%02x", md_value[i]);
-
-	  if (strncmp(hexdigest, expectedHash, 64) != 0)
-	  	showErrorAndExit(configuration.texts.itemHashDoesntMatch, ERR_ITEMHASHDONTMATCH);
-  #endif
 }
+
+#endif
