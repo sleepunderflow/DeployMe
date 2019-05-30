@@ -96,13 +96,13 @@ def getItem(apikey, itemID, secret):
   return ResultSet
 
 def getKeys(itemID):
-  query = db.select([keys]).where(items.keys.itemID==itemID)
+  query = db.select([keys]).where(items.columns.itemID==itemID)
   ResultProxy = connection.execute(query)
   ResultSet = ResultProxy.fetchall()
   return ResultSet
 
 def getCommands(itemID):
-  query = db.select([commands]).where(commands.keys.itemID==itemID)
+  query = db.select([commands]).where(commands.columns.itemID==itemID)
   ResultProxy = connection.execute(query)
   ResultSet = ResultProxy.fetchall()
   return ResultSet

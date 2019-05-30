@@ -6,7 +6,149 @@ This chapter specifies how the server works and how to communicate with it.
 Server uses sqlite database in file \texttt{DeployMe.db}. This database has 4 tables:
 \begin{itemize}
   \item \textbf{users} - holds API keys that are allowed to create new items. API keys are randomly generated UUIDs. The key with ID==1 (one that is generated on running \texttt{createDb.py} is the only one authorized to create new users so be sure to save it)
-  \item \textbf{items} - holds itemID, access API key and secret that are required to get the information from the server. Holds also the API key of the owner, and some of the encryption keys. (accessApiKey can only be used to get this particular item from the server, it does not work as user api key)
+  \item \textbf{items} - holds itemID, access API key and secret that are required to get the information from the server. Holds also the API key of the owner, and some of the encryption keys. (accessApiKey can only be used to get this particular item from the server, it does not work as user API key)
   \item \textbf{keys} - holds item encryption keys attached to the registered item
   \item \textbf{commands} - holds encrypted commands and flags assigned to the registered item
 \end{itemize}
+
+\section{APIs}
+
+\subsection{Response on error}
+Whenever the error happens in any of the functions the response is generated in the same format. Indication that the error happened is the value of the \emph{"result"} field. If it's \emph{"ok"} the query was executed successfully, if it's \emph{"error"} the error occurred.
+
+\texttt{
+  \{ \\
+  "error": errorCode,\\
+  "message":"Error message",\\
+  "result":"error"\\
+  \}
+}
+
+\begin{itemize}
+  \item \textbf{error} - error code, should be the same as HTTP error code, most likely 500
+  \item \textbf{message} - short explanation why the error happened
+  \item \textbf{result} - always on error is "error"
+\end{itemize}
+
+\emph{All the formats below are only showing format on success}
+
+\subsection{getencryptionkeys}
+Method: \texttt{GET}
+
+Format: \texttt{/getencryptionkeys/<itemapikey>/<id>?secret=<secret>}
+
+Response: JSON
+
+\texttt{
+  \{ \\
+    "commandKey": "commands encryption key", \\
+    "itemID": "item ID", \\
+    "itemKeys": ["item key 1", "item key 2"], \\
+    "result": "ok",\\
+    "returnKey": "return encryption key"\\
+  \}
+}
+
+\begin{itemize}
+  \item \textbf{commandKey} - encryption key with which commands stored in the database are encrypted
+  \item \textbf{itemID} - item ID, for confirmation with request
+  \item \textbf{itemKeys} - encryption keys for each individual injected item, as many keys as items, returned as an array
+  \item \textbf{result} - on success always "ok"
+  \item \textbf{returnKey} - encryption key with which client should encrypt the returned output so that it can be decrypted later (not yet implemented)
+\end{itemize}
+
+
+\subsection{getcommands}
+Method: \texttt{GET}
+
+Format: \texttt{/getcommands/<itemapikey>/<id>?secret=<secret>}
+
+Response: JSON
+
+\texttt{
+  \{ \\
+  "commands": \\
+  {[ \\
+    \{"command": "command1", "flags": 1\}, \\
+    \{"command": "command2", "flags": 5\}\\
+  ]}, \\
+  "itemID": "item ID", \\
+  "result": "ok"\\
+  \}
+}
+
+\begin{itemize}
+  \item \textbf{commands} - commands encrypted with commandKey from getencryptionkeys API call. Formatted as an array. Each command is encrypted with the same key. Each command is an object containing properties \emph{command} which holds the actual command and \emph{flags} which holds numerical flag for the command.
+  \item \textbf{itemID} - item ID, for confirmation with request
+  \item \textbf{result} - on success always "ok"
+\end{itemize}
+
+\subsection{registernewobject}
+Method: \texttt{POST}
+
+Format: \texttt{/registernewobject/<userapikey>}
+
+Data: JSON
+
+\texttt{
+  \{\\
+  "commands":\\
+  {[\\
+  \{"command":"command 1", "flags":0\},\\
+  \{"command":"command 2", "flags":1\}\\
+  ]},\\
+  "numberofkeys":2\\
+  \}
+}
+
+\begin{itemize}
+  \item \textbf{commands} - Plain text commands to be executed by client and encrypted already on the server. Each command is an object containing properties \emph{command} which holds the actual command and \emph{flags} which holds numerical flag for the command.
+  \item \textbf{numberofkeys} - how many individual items are there, there will be a separate key generated for each
+\end{itemize}
+
+Response: JSON
+
+\texttt{
+  \{\\
+  "accessApiKey": "API key",\\
+  "itemID": "item ID", \\
+  "itemKeys": {["key1", "key2"]}, \\
+  "result": "ok", \\
+  "returnKey": "return encryption key", \\
+  "secret": "secret"\\
+  \}
+}
+
+\begin{itemize}
+  \item \textbf{accessApiKey} - item API key needed to get encryption keys and commands back
+  \item \textbf{itemID} - new item ID, needed to get information back
+  \item \textbf{itemKeys} - array of encryption keys, the number of them is the same as requested
+  \item \textbf{result} - on success always "ok"
+  \item \textbf{returnKey} - encryption key with which response from client will be encrypted (not yet implemented)
+  \item \textbf{secret} - secret needed to get encryption keys and commands back
+\end{itemize}
+
+\subsection{management/addnewuser}
+Method: \texttt{GET}
+
+Format: \texttt{/management/addnewuser/<userapikey>}
+
+\emph{Can only be called using first API key generated on DB creation!!!}
+
+Response: JSON
+
+\texttt{
+  \{\\
+  "apiKey": "user API key", \\
+  "newApiKey": "new user API key", \\
+  "result": "ok"\\
+  \}
+}
+
+\begin{itemize}
+  \item \textbf{apiKey} - the API key used for user creation, just for validation
+  \item \textbf{newApiKey} - newly generated user API key
+  \item \textbf{result} - on success always "ok"
+\end{itemize}
+
+
