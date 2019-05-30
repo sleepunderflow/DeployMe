@@ -40,6 +40,7 @@ translation getLangEN_GB() {
   return texts;
 }
 
+// TODO: Wide strings for Windows
 translation getLangPL_PL() {
   // Use en_GB as base so that if something is not translated it'll be displayed
   // in english
